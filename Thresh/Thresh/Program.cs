@@ -146,6 +146,19 @@ namespace 锤石 {
 				}
 			}
 			#endregion
+
+			#region
+			if (!sender.IsEnemy || sender.IsMinion || args.SData.IsAutoAttack() || !sender.IsValid<Obj_AI_Hero>() || Player.Distance(sender.ServerPosition) > 2000)
+				return;
+
+			if (args.SData.Name == "YasuoWMovingWall")
+			{
+				OPrediction.yasuoWall.CastTime = Game.Time;
+				OPrediction.yasuoWall.CastPosition = sender.Position.Extend(args.End, 400);
+				OPrediction.yasuoWall.YasuoPosition = sender.Position;
+				OPrediction.yasuoWall.WallLvl = sender.Spellbook.Spells[1].Level;
+			}
+			#endregion
 		}
 
 		private static void Spellbook_OnCastSpell(Spellbook sender, SpellbookCastSpellEventArgs args) {
@@ -321,8 +334,7 @@ namespace 锤石 {
 			var target = TargetSelector.GetTarget(Q.Range, TargetSelector.DamageType.Physical);
 			if (Q.Instance.Name == "ThreshQ" && Q.CanCast(target)&& !E.IsInRange(target) && !Player.IsRecalling())
 			{
-				CastQ(target, HitChance.Collision);
-				CastQ(target, HitChance.Immobile);
+				CastQ(target);
 			}
 		}
 
@@ -346,6 +358,10 @@ namespace 锤石 {
 			FleeConfig.AddItem(new MenuItem("逃跑", "Flee").SetValue(new KeyBind('S', KeyBindType.Press)));
 			FleeConfig.AddItem(new MenuItem("E推人","Auto E push").SetValue(true));
 			FleeConfig.AddItem(new MenuItem("Q野怪", "Auto Q Jungle").SetValue(true));
+
+			var PredictConfig = Config.AddSubMenu(new Menu("Predict Settings", "预判设置"));
+			PredictConfig.AddItem(new MenuItem("预判模式", "Prediction Mode").SetValue(new StringList(new[] { "Common", "OKTW" })));
+			PredictConfig.AddItem(new MenuItem("命中率", "HitChance").SetValue(new StringList(new[] { "Very High", "High", "Medium" })));
 
 			var BoxConfig = Config.AddSubMenu(new Menu("Box Settings","大招设置"));
 			BoxConfig.AddItem(new MenuItem("大招人数","Box Count").SetValue(new Slider(2,1,6)));
@@ -615,15 +631,11 @@ namespace 锤石 {
 
 		}
 
-		private static bool CastQ(Obj_AI_Hero target = null, HitChance hitChance = HitChance.VeryHigh) {
-			if (GetQName()== QName.ThreshQ && target!=null)
+		private static bool CastQ(Obj_AI_Hero target = null) {
+			if (GetQName()== QName.ThreshQ && target!=null && !Orbwalking.InAutoAttackRange(target))
 			{
-				var Qpre = Q.GetPrediction(target);
-				if (Qpre.Hitchance >= hitChance)
-				{
-					return Q.Cast(Qpre.CastPosition);
-				}
-			}
+				return CastThreshQ1(target);
+            }
 			else if(GetQName()== QName.threshqleap )
 			{
 				if (Qedtarget is Obj_AI_Hero && Qedtarget.GetPassiveTime("ThreshQ") < 0.3)
@@ -638,6 +650,21 @@ namespace 锤石 {
 			}
 			return false;
 		}
+
+		public static bool CastThreshQ1(Obj_AI_Base target) {
+			if (Config.Item("预判模式").GetValue<StringList>().SelectedIndex == 0)
+			{
+				var hitChangceList = new[] { HitChance.VeryHigh, HitChance.High, HitChance.Medium };
+				return Q.CastIfHitchanceEquals(target, hitChangceList[Config.Item("命中率").GetValue<StringList>().SelectedIndex]);
+			}
+			if (Config.Item("预判模式").GetValue<StringList>().SelectedIndex == 1)
+			{
+				var hitChangceList = new[] { OPrediction.HitChance.VeryHigh, OPrediction.HitChance.High, OPrediction.HitChance.Medium };
+				return Q.CastOKTW(target, hitChangceList[Config.Item("命中率").GetValue<StringList>().SelectedIndex]);
+			}
+			return false;
+		}
+
 		enum QName {
 			ThreshQ,
 			threshqleap
