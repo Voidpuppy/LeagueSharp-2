@@ -58,6 +58,7 @@
   <ItemGroup>
     <Compile Include="Extensions.cs" />
     <Compile Include="Jungle.cs" />
+    <Compile Include="OPrediction.cs" />
     <Compile Include="Program.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
   </ItemGroup>
