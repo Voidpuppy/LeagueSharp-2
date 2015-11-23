@@ -76,30 +76,36 @@ namespace 锤石 {
             return target.HasBuffOfType(BuffType.SpellShield) || target.HasBuffOfType(BuffType.SpellImmunity);
 		}
 
-		public static Obj_AI_Turret GetMostCloseTower(this Obj_AI_Hero target) {
+		public static Obj_AI_Turret GetMostCloseTower(this Obj_AI_Base target) {
 			Obj_AI_Turret tur = null;
+
+			if (target.IsDead) return null;
+
 			foreach (var turret in ObjectManager.Get<Obj_AI_Turret>().Where(t =>
 				t.IsValid && !t.IsDead && t.Health > 1f && t.IsVisible && t.Distance(target)< 1000))
 			{
-				if (tur == null)
+				if (turret != null)
 				{
-					tur = turret;
-				}
-				else if(tur.Distance(target)>turret.Distance(target))
-				{
-					
-					tur = turret;
+					if (tur == null)
+					{
+						tur = turret;
+					}
+					else if (tur!=null && tur.Distance(target) > turret.Distance(target))
+					{
+
+						tur = turret;
+					}
 				}
             }
 			return tur;
 		}
 
-		public static bool IsInTurret(this Obj_AI_Hero targetHero, Obj_AI_Turret targetTurret = null) {
+		public static bool IsInTurret(this Obj_AI_Base targetHero, Obj_AI_Turret targetTurret = null) {
 			if (targetTurret == null)
 			{
 				targetTurret = targetHero.GetMostCloseTower();
             }
-			if (targetHero.Distance(targetTurret)<850)
+			if (targetTurret!=null && targetHero.Distance(targetTurret)<850)
 			{
 				return true;
 			}

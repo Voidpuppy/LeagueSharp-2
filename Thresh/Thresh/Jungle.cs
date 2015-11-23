@@ -136,18 +136,7 @@ namespace 锤石 {
 						new List<Mob>(new[] { new Mob("SRU_Baron12.1.1", true) }), true,
 						MapType.SummonersRift, GameObjectTeam.Neutral,
 						"大龙"),
-                    //Dragon: Crab
-                    new Camp(
-						150, 180, new Vector3(10647.70f, 5144.68f, -62.81f),
-						new List<Mob>(new[] { new Mob("SRU_Crab15.1.1", true) }), false,
-						MapType.SummonersRift, GameObjectTeam.Neutral,
-						"河蟹"),
-                    //Baron: Crab
-                    new Camp(
-						150, 180, new Vector3(4285.04f, 9597.52f, -67.60f),
-						new List<Mob>(new[] { new Mob("SRU_Crab16.1.1", true) }), false,
-						MapType.SummonersRift, GameObjectTeam.Neutral,
-						"河蟹"),
+                   
                     //Order: Wraiths
                     new Camp(
 						95, 75, new Vector3(4373.14f, 5842.84f, -107.14f),
