@@ -542,9 +542,9 @@ namespace 锤石 {
 
 		private static void FlayPush() {
 			
-			foreach (var enemy in HeroManager.Enemies)
+			foreach (var enemy in HeroManager.Enemies.Where(e => e.IsValid && !e.IsDead))
 			{
-				if (E.CanCast(enemy) && Player.IsFleeing(enemy) && enemy.IsChaseing(Player))
+				if (E.CanCast(enemy))
 				{
 					E.Cast(enemy);
 				}
