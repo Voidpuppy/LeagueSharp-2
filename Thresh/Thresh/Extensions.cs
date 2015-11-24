@@ -28,6 +28,16 @@ namespace 锤石 {
 					.FirstOrDefault() - Game.Time;
 		}
 
+		public static List<Obj_AI_Hero> ListAlliesInRange(this Obj_AI_Hero hero, float range) {
+			List<Obj_AI_Hero> Allies = new List<Obj_AI_Hero>();
+			foreach (var ally in HeroManager.Allies.Where(a => a.Distance(hero)<= range))
+			{
+				Allies.Add(ally);
+            }
+			return Allies;
+        }
+
+
 		public static int CountEnemiesInRangeDeley(this Obj_AI_Hero hero, float range, float delay) {
 			int count = 0;
 			foreach (var t in HeroManager.Enemies.Where(t => t.IsValidTarget()))
@@ -64,7 +74,7 @@ namespace 锤石 {
 		/// <param name="target">追击目标</param>
 		/// <returns></returns>
 		public static bool IsChaseing(this Obj_AI_Hero hero, Obj_AI_Base target) {
-			if (hero == null || target == null)
+			if (target == null)
 			{
 				return false;
 			}

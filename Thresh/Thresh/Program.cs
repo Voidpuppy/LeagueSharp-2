@@ -50,7 +50,7 @@ namespace 锤石 {
 				{
 					args.Process = false;
 				}
-				else if (Q.IsReady())
+				else if (Q.IsReady() && GetQName()== QName.ThreshQ)
 				{
 					var target = Q.GetTarget();
 					if (target != null && target.IsValid && !target.HasSpellShield() && Q.Cast(Q.GetPrediction(target).CastPosition))
@@ -242,11 +242,13 @@ namespace 锤石 {
 		}
 
 		private static void Unit_OnDash(Obj_AI_Base sender, Dash.DashItem args) {
-			if (sender.IsEnemy && args.IsBlink && E.IsReady()&& Player.Distance(args.StartPos)<E.Range)
+			
+			if (sender.IsEnemy && !args.IsBlink && E.IsReady()&& Player.Distance(args.StartPos)<E.Range)
 			{
 				E.Cast(args.StartPos);
 			}
-			if (sender.IsEnemy && Q.IsReady() && Player.Distance(args.EndPos) < Q.Range && Math.Abs(args.Duration - args.EndPos.Distance(sender) / Q.Speed*1000 )<200)
+
+			if (sender.IsEnemy && Q.IsReady() && Player.Distance(args.EndPos) < Q.Range && Math.Abs(args.Duration - args.EndPos.Distance(sender) / Q.Speed*1000 )<150)
 			{
 				List<Vector2> to = new List<Vector2>();
 				to.Add(args.EndPos);
@@ -354,6 +356,10 @@ namespace 锤石 {
 			Orbwalker = new Orbwalking.Orbwalker(OrbMenu);
 			Config.AddSubMenu(OrbMenu);
 
+			var SpellQConfig = Config.AddSubMenu(new Menu("Q Settings", "Q设置"));
+			SpellQConfig.AddItem(new MenuItem("不用Q2", "Don't Auto Q2").SetValue(false));
+			SpellQConfig.AddItem(new MenuItem("人数比", "Don't Q2 if Enemies > allies").SetValue(new Slider(0,0,5)));
+
 			var FleeConfig = Config.AddSubMenu(new Menu("Flee Settings", "逃跑设置"));
 			FleeConfig.AddItem(new MenuItem("逃跑", "Flee").SetValue(new KeyBind('S', KeyBindType.Press)));
 			FleeConfig.AddItem(new MenuItem("E推人","Auto E push").SetValue(true));
@@ -388,7 +394,12 @@ namespace 锤石 {
 			TowerConfig.AddItem(new MenuItem("拉敌人进塔", "Q/E target into ally turret").SetValue(true));
 			TowerConfig.AddItem(new MenuItem("Q不进敌塔", "Don't Q2 in enemy turret").SetValue(true));
 
-			Config.AddToMainMenu();
+			//var LevelConfig = Config.AddSubMenu(new Menu("Level Settings", "自动加点"));
+			//LevelConfig.AddItem(new MenuItem("启用", "Enable").SetValue(true));
+			//LevelConfig.AddItem(new MenuItem("只加大招","Only level R").SetValue(false));
+			//LevelConfig.AddItem(new MenuItem("前三级", "2 -  3 Level").SetValue(new StringList(new[] { "Don't Level","Q-W","Q-E","W-Q","W-E","E-Q","E-W" })));
+			//LevelConfig.AddItem(new MenuItem("后几级", "4 - 18 Level").SetValue(new StringList(new[] { "Don't Level","Q-W-E","Q-E-W","W-Q-E","W-E-Q","E-Q-W","E-W-Q" })));
+			//Config.AddToMainMenu();
         }
 
 		private static void Combo() {
@@ -467,16 +478,10 @@ namespace 锤石 {
 			
 			if (FurthestAlly != null)
 			{
-				if (Qedtarget!=null && !Qedtarget.IsMinion)
+				if (Qedtarget!=null && !Qedtarget.IsMinion && W.Cast(Prediction.GetPrediction(FurthestAlly, 1f).CastPosition))
 				{
-					var enemyCount = Player.CountEnemiesInRange(1500);
-					var allyCount = Player.CountAlliesInRange(1500);
-					if (enemyCount >= allyCount + 1 && W.Cast(Prediction.GetPrediction(FurthestAlly, 1f).CastPosition))
-					{
-						Console.WriteLine("给最远队友灯笼");
-						return;
-					}
-	
+					Console.WriteLine("给最远队友灯笼");
+					return;
 				}
 			}
 			else if (AoeAlly != null && W.Cast(AoeAlly.Position))
@@ -507,47 +512,53 @@ namespace 锤石 {
 		private static Obj_AI_Hero AOELantern() {
 			Obj_AI_Hero aoeAlly = null;
 			int aoeCount = 0;
+
 			foreach (var ally in HeroManager.Allies.Where(a => !a.IsDead && Player.Distance(a)<W.Range && a.CountEnemiesInRange(500)>0))
 			{
-				int allyCount = ally.CountAlliesInRange(400);
-                if ((aoeAlly == null && allyCount > 0)||(aoeAlly != null && allyCount > aoeCount))
+				var allies = ally.ListAlliesInRange(400);
+				if (allies.All(a =>!a.IsDead && a.HealthPercent<0.5))
 				{
-					aoeAlly = ally;
-					aoeCount = allyCount;
-                }
+					if ((aoeAlly == null && allies.Count > 0) || (aoeAlly != null && allies.Count > aoeCount))
+					{
+						aoeAlly = ally;
+						aoeCount = allies.Count;
+					}
+				}
 			}
 			return aoeAlly;
+        }
+
+		private static bool WFurthestAlly() {
+			var FurthestAlly = GrabFurthestAlly();
+			if (FurthestAlly!=null)
+			{
+				return  W.Cast(FurthestAlly.Position); 
+            }
+			return false;
         }
 
 		private static Obj_AI_Hero GrabFurthestAlly() {
 			Obj_AI_Hero FurthestAlly = null;
 
-			var target = TargetSelector.GetTarget(Q.Range, TargetSelector.DamageType.Physical);
-			if (Player.Distance(target) < 500)
+			var target = Qedtarget!=null?Qedtarget:TargetSelector.GetTarget(Q.Range, TargetSelector.DamageType.Physical);
+			foreach (var ally in HeroManager.Allies.Where(a => a.Distance(target)>1000 && a.Distance(Player) < W.Range + 100 && !a.IsDead && !a.IsMe))
 			{
-				foreach (var ally in HeroManager.Allies.Where(a => a.Distance(Player)< W.Range+50 && !a.IsDead && !a.IsMe))
+				if (FurthestAlly == null)
 				{
-					if (FurthestAlly==null)
-					{
-						FurthestAlly = ally;
-					}
-					else if(Player.Distance(ally) < Player.Distance(FurthestAlly))
-					{
-						FurthestAlly = ally;
-					}
-                }
+					FurthestAlly = ally;
+				}
+				else if (FurthestAlly!=null && Player.Distance(ally) > Player.Distance(FurthestAlly))
+				{
+					FurthestAlly = ally;
+				}
 			}
 			return FurthestAlly;
         }
 
 		private static void FlayPush() {
-			
-			foreach (var enemy in HeroManager.Enemies.Where(e => e.IsValid && !e.IsDead))
+			foreach (var enemy in HeroManager.Enemies.Where(e => e.IsValid && !e.IsDead && E.IsInRange(e)))
 			{
-				if (E.CanCast(enemy))
-				{
-					E.Cast(enemy);
-				}
+				E.Cast(enemy);
 			}
 		}
 
@@ -636,8 +647,22 @@ namespace 锤石 {
 			{
 				return CastThreshQ1(target);
             }
-			else if(GetQName()== QName.threshqleap )
+			else if(GetQName()== QName.threshqleap && !Config.Item("不用Q2").GetValue<bool>())
 			{
+				var EnemiesCount = 0;
+				if (Qedtarget.IsMinion)
+				{
+					EnemiesCount = Qedtarget.CountEnemiesInRange(700);
+				}
+				else
+				{
+					EnemiesCount = Qedtarget.CountEnemiesInRange(700)+1;
+				}
+				if (EnemiesCount - Player.CountAlliesInRange(700)>= Config.Item("人数比").GetValue<Slider>().Value)
+				{
+					return false;
+				}
+
 				if (Qedtarget is Obj_AI_Hero && Qedtarget.GetPassiveTime("ThreshQ") < 0.3)
 				{
 					return Q.Cast();
