@@ -22,6 +22,7 @@ namespace 锤石 {
 		}
 		public static YasuoWall yasuoWall = new YasuoWall();
 
+		
 		public static bool CollisionYasuo(Vector3 from, Vector3 to) {
 			if (Game.Time - yasuoWall.CastTime > 4)
 				return false;
