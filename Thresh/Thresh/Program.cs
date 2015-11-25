@@ -7,7 +7,6 @@ using LeagueSharp;
 using LeagueSharp.Common;
 using SharpDX;
 using Color = System.Drawing.Color;
-using Keys = System.Windows.Forms.Keys;
 
 namespace 锤石 {
 	class Program {
