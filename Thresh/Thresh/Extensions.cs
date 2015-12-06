@@ -5,19 +5,45 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
-using System.Threading.Tasks; 
+using System.Threading.Tasks;
+using Color = System.Drawing.Color;
 
-namespace 锤石 {
+namespace Thresh {
 	public static class Extensions {
-		public static bool InBase(this Obj_AI_Hero hero) {
-			foreach (var item in ObjectManager.Get<Obj_Shop>())
+
+		//转换为对话框用
+		public static string ToUTF8(this string form) {
+			var bytes = Encoding.Convert(Encoding.Default, Encoding.UTF8, Encoding.Default.GetBytes(form));
+			return Encoding.Default.GetString(bytes);
+		}
+		//转换为菜单用
+		public static string ToGBK(this string form) {
+			var bytes = Encoding.Convert(Encoding.UTF8, Encoding.Default, Encoding.Default.GetBytes(form));
+			return Encoding.Default.GetString(bytes);
+		}
+
+
+		public static string ToHtml(this string form, Color color, FontStlye fontStlye = FontStlye.Null) {
+			return form.ToHtml(System.Drawing.ColorTranslator.ToHtml(color), fontStlye);
+        }
+
+		public static string ToHtml(this string form,string color, FontStlye fontStlye = FontStlye.Null) {
+			form = form.ToUTF8();
+			form = string.Format("<font color=\"{0}\">{1}</font>", color,form);
+
+			if (fontStlye!=FontStlye.Null)
 			{
-				if (hero.Distance(item) < 5000)
+				switch (fontStlye)
 				{
-					return true;
+					case FontStlye.Bold:
+						form = string.Format("<b>{0}</b>", form);
+						break;
+					case FontStlye.Cite:
+						form = string.Format("<i>{0}</i>", form);
+						break;
 				}
 			}
-			return false;
+			return form;
 		}
 
 		public static float GetPassiveTime(this Obj_AI_Base target, String buffName) {
@@ -28,15 +54,72 @@ namespace 锤石 {
 					.FirstOrDefault() - Game.Time;
 		}
 
-		public static List<Obj_AI_Hero> ListAlliesInRange(this Obj_AI_Hero hero, float range) {
-			List<Obj_AI_Hero> Allies = new List<Obj_AI_Hero>();
-			foreach (var ally in HeroManager.Allies.Where(a => a.Distance(hero)<= range))
-			{
-				Allies.Add(ally);
-            }
-			return Allies;
-        }
+		public static Obj_AI_Turret GetMostCloseTower(this Obj_AI_Base target) {
+			Obj_AI_Turret tur = null;
 
+			if (target.IsDead) return null;
+
+			foreach (var turret in ObjectManager.Get<Obj_AI_Turret>().Where(t =>
+				t.IsValid && !t.IsDead && t.Health > 1f && t.IsVisible && t.Distance(target) < 1000))
+			{
+				if (turret != null)
+				{
+					if (tur == null)
+					{
+						tur = turret;
+					}
+					else if (tur != null && tur.Distance(target) > turret.Distance(target))
+					{
+
+						tur = turret;
+					}
+				}
+			}
+			return tur;
+		}
+
+		public static bool IsInTurret(this Obj_AI_Base targetHero, Obj_AI_Turret targetTurret = null) {
+			if (targetTurret == null)
+			{
+				targetTurret = targetHero.GetMostCloseTower();
+			}
+			if (targetTurret != null && targetHero.Distance(targetTurret) < 850)
+			{
+				return true;
+			}
+			return false;
+		}
+
+		public static bool CastToReverse(this Spell spell, Obj_AI_Base target) {
+			var eCastPosition = spell.GetPrediction(target).CastPosition;
+			var position = Thresh.Player.ServerPosition + Thresh.Player.ServerPosition - eCastPosition;
+			return spell.Cast(position);
+		}
+
+		public static bool IsFleeing(this Obj_AI_Hero hero, Obj_AI_Base target) {
+			if (hero == null || target == null)
+			{
+				return false;
+			}
+
+			if (hero.Path.Count()>0 && target.Distance(hero.Position) < target.Distance(hero.Path.Last()))
+			{
+				return true;
+			}
+			return false;
+		}
+
+		public static bool IsHunting(this Obj_AI_Hero hero, Obj_AI_Base target) {
+			if (target == null)
+			{
+				return false;
+			}
+			if (target.Path.Count() > 0 && hero.Distance(target.Position) > hero.Distance(target.Path.Last()))
+			{
+				return true;
+			}
+			return false;
+		}
 
 		public static int CountEnemiesInRangeDeley(this Obj_AI_Hero hero, float range, float delay) {
 			int count = 0;
@@ -49,152 +132,5 @@ namespace 锤石 {
 			return count;
 		}
 
-		/// <summary>
-		/// 是否正在远离某个目标
-		/// </summary>
-		/// <param name="hero">自己</param>
-		/// <param name="target">远离目标</param>
-		/// <returns></returns>
-		public static bool IsFleeing(this Obj_AI_Hero hero,Obj_AI_Base target) {
-			if (hero == null || target==null)
-			{
-				return false;
-			}
-
-			if (target.Distance(hero.Position)<target.Distance(hero.Path.Last()))
-			{
-				return true;
-			}
-			return false;
-		}
-		/// <summary>
-		/// 是否某个目标正在追击
-		/// </summary>
-		/// <param name="hero">自己</param>
-		/// <param name="target">追击目标</param>
-		/// <returns></returns>
-		public static bool IsChaseing(this Obj_AI_Hero hero, Obj_AI_Base target) {
-			if (target == null)
-			{
-				return false;
-			}
-			if (hero.Distance(target.Position) > hero.Distance(target.Path.Last()))
-			{
-				return true;
-			}
-			return false;
-		}
-
-		public static bool CastToReverse(this Spell spell,Obj_AI_Base target) {
-			var eCastPosition = spell.GetPrediction(target).CastPosition;
-			var position =Program.Player.ServerPosition + Program.Player.ServerPosition  - eCastPosition;
-			return spell.Cast(position);
-		}
-
-		public static bool HasSpellShield(this Obj_AI_Hero target) {
-            return target.HasBuffOfType(BuffType.SpellShield) || target.HasBuffOfType(BuffType.SpellImmunity);
-		}
-
-		public static Obj_AI_Turret GetMostCloseTower(this Obj_AI_Base target) {
-			Obj_AI_Turret tur = null;
-
-			if (target.IsDead) return null;
-
-			foreach (var turret in ObjectManager.Get<Obj_AI_Turret>().Where(t =>
-				t.IsValid && !t.IsDead && t.Health > 1f && t.IsVisible && t.Distance(target)< 1000))
-			{
-				if (turret != null)
-				{
-					if (tur == null)
-					{
-						tur = turret;
-					}
-					else if (tur!=null && tur.Distance(target) > turret.Distance(target))
-					{
-
-						tur = turret;
-					}
-				}
-            }
-			return tur;
-		}
-
-		public static bool IsInTurret(this Obj_AI_Base targetHero, Obj_AI_Turret targetTurret = null) {
-			if (targetTurret == null)
-			{
-				targetTurret = targetHero.GetMostCloseTower();
-            }
-			if (targetTurret!=null && targetHero.Distance(targetTurret)<850)
-			{
-				return true;
-			}
-			return false;
-		}
-
-		public static bool HasWall(this Obj_AI_Base from, Obj_AI_Base target) {
-			if (GetFirstWallPoint(from.Position, target.Position) != null)
-			{
-				return true;
-			}
-			return false;
-		}
-
-		public static bool HasWall(this Obj_AI_Base from, Vector3 to) {
-			if (GetFirstWallPoint(from.Position, to) != null)
-			{
-				return true;
-			}
-			return false;
-		}
-
-		public static Vector2? GetFirstWallPoint(Vector3 from, Vector3 to, float step = 25) {
-			return GetFirstWallPoint(from.To2D(), to.To2D(), step);
-		}
-
-		public static Vector2? GetFirstWallPoint(Vector2 from, Vector2 to, float step = 25) {
-			var direction = (to - from).Normalized();
-
-			for (float d = 0; d < from.Distance(to); d = d + step)
-			{
-				var testPoint = from + d * direction;
-				var flags = NavMesh.GetCollisionFlags(testPoint.X, testPoint.Y);
-				if (flags.HasFlag(CollisionFlags.Wall) || flags.HasFlag(CollisionFlags.Building))
-				{
-					return from + (d - step) * direction;
-				}
-			}
-			return null;
-		}
-
-		public static bool CastOKTW(this Spell spell, Obj_AI_Base target, OPrediction.HitChance hitChance) {
-			var Config = Program.Config;
-			var Player = Program.Player;
-
-			OPrediction.SkillshotType CoreType2 = OPrediction.SkillshotType.SkillshotLine;
-			bool aoe2 = false;
-
-			var predInput2 = new OPrediction.PredictionInput
-			{
-				Aoe = aoe2,
-				Collision = spell.Collision,
-				Speed = spell.Speed,
-				Delay = spell.Delay,
-				Range = spell.Range,
-				From = Player.ServerPosition,
-				Radius = spell.Width,
-				Unit = target,
-				Type = CoreType2
-			};
-			var poutput2 = OPrediction.Prediction.GetPrediction(predInput2);
-
-			if (spell.Speed != float.MaxValue && OPrediction.CollisionYasuo(Player.ServerPosition, poutput2.CastPosition))
-				return false;
-
-			if (poutput2.Hitchance >= hitChance)
-			{
-				return spell.Cast(poutput2.CastPosition);
-			}
-			return false;
-		}
 	}
 }

@@ -7,8 +7,8 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace 锤石 {
-	public class OPrediction{
+namespace Thresh {
+	public class OKTWPrediction {
 
 		public class YasuoWall {
 			public Vector3 YasuoPosition { get; set; }
@@ -20,9 +20,9 @@ namespace 锤石 {
 				CastTime = 0;
 			}
 		}
+
 		public static YasuoWall yasuoWall = new YasuoWall();
 
-		
 		public static bool CollisionYasuo(Vector3 from, Vector3 to) {
 			if (Game.Time - yasuoWall.CastTime > 4)
 				return false;
@@ -1268,5 +1268,6 @@ namespace 锤石 {
 				return (Utils.TickCount - TrackerUnit.StopMoveTick) / 1000d;
 			}
 		}
+
 	}
 }
