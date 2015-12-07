@@ -24,8 +24,9 @@ namespace Thresh {
 
 
 		public static string ToHtml(this string form, Color color, FontStlye fontStlye = FontStlye.Null) {
-			return form.ToHtml(System.Drawing.ColorTranslator.ToHtml(color), fontStlye);
-        }
+			string colorhx = "#" + color.ToArgb().ToString("X6");
+			return form.ToHtml(colorhx, fontStlye);
+		}
 
 		public static string ToHtml(this string form,string color, FontStlye fontStlye = FontStlye.Null) {
 			form = form.ToUTF8();

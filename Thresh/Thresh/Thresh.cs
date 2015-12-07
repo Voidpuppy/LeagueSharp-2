@@ -212,17 +212,18 @@ namespace Thresh {
 		}
 
 		private static void Flee() {
-			if (!Config.Item("逃跑").GetValue<KeyBind>().Active) return;
-
-			Player.IssueOrder(GameObjectOrder.MoveTo,Game.CursorPos);
-
-			if (Config.Item("E推人").GetValue<bool>())
+			if (Config.Item("逃跑").GetValue<KeyBind>().Active)
 			{
-				foreach (var enemy in HeroManager.Enemies.Where(e=>!e.IsDead && !e.HasBuffOfType(BuffType.SpellShield)))
+				Player.IssueOrder(GameObjectOrder.MoveTo, Game.CursorPos);
+
+				if (Config.Item("E推人").GetValue<bool>())
 				{
-					if (E.CanCast(enemy))
+					foreach (var enemy in HeroManager.Enemies.Where(e => !e.IsDead && !e.HasBuffOfType(BuffType.SpellShield)))
 					{
-						E.Cast(enemy);
+						if (E.CanCast(enemy))
+						{
+							E.Cast(enemy);
+						}
 					}
 				}
 			}
@@ -674,31 +675,6 @@ namespace Thresh {
 					}
 				}
             }
-
-			//List<MenuItem> MenuItems = new List<MenuItem>();
-			//List<Menu> Menus = new List<Menu>();
-			//Menus.Add(Config);
-			//         foreach (var menu in Config.Children)
-			//{
-			//	Menus.Add(menu);
-			//	MenuItems.AddRange(menu.Items);
-			//}
-			//foreach (var item in Menus)
-			//{
-			//	var DisplayName = Language.Find(l => l.Key == item.Name).Value;
-			//	if (!string.IsNullOrEmpty(DisplayName))
-			//	{
-			//		item.DisplayName = DisplayName;
-			//	}
-			//}
-			//foreach (var item in MenuItems)
-			//{
-			//	var DisplayName = Language.Find(l => l.Key == item.Name).Value;
-			//	if (!string.IsNullOrEmpty(DisplayName))
-			//	{
-			//		item.DisplayName = DisplayName;
-			//	}
-			//}
 		}
 
 		private static List<object> GetSubMenus(Menu menu) {
