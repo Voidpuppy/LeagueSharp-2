@@ -600,11 +600,11 @@ namespace Thresh {
 
 			var DrawConfig = Config.AddSubMenu(new Menu("Drawing Settings", "显示设置"));
 			DrawConfig.AddItem(new MenuItem("技能可用才显示", "Draw when skill is ready").SetValue(true));
-			DrawConfig.AddItem(new MenuItem("显示Q", "Draw Q Range").SetValue(new Circle(true, Color.YellowGreen)));
-			DrawConfig.AddItem(new MenuItem("显示W", "Draw W Range").SetValue(new Circle(true, Color.Yellow)));
-			DrawConfig.AddItem(new MenuItem("显示E", "Draw E Range").SetValue(new Circle(true, Color.GreenYellow)));
-			DrawConfig.AddItem(new MenuItem("显示R", "Draw R Range").SetValue(new Circle(true, Color.LightGreen)));
-			DrawConfig.AddItem(new MenuItem("标识目标", "Draw Target").SetValue(new Circle(true, Color.Red)));
+			DrawConfig.AddItem(new MenuItem("显示Q", "Draw Q Range").SetValue(new Circle(false, Color.YellowGreen)));
+			DrawConfig.AddItem(new MenuItem("显示W", "Draw W Range").SetValue(new Circle(false, Color.Yellow)));
+			DrawConfig.AddItem(new MenuItem("显示E", "Draw E Range").SetValue(new Circle(false, Color.GreenYellow)));
+			DrawConfig.AddItem(new MenuItem("显示R", "Draw R Range").SetValue(new Circle(false, Color.LightGreen)));
+			DrawConfig.AddItem(new MenuItem("标识目标", "Draw Target").SetValue(new Circle(false, Color.Red)));
 
 			var SmartKeyConfig = Config.AddSubMenu(new Menu("Smart Cast", "智能施法"));
 			SmartKeyConfig.AddItem(new MenuItem("智能施法标签", "Enable Follow Options,Prss Q/W/E Auto Cast Spell"));
