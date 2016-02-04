@@ -656,6 +656,7 @@ namespace Thresh {
 
 			foreach (var item in menus)
 			{
+
 				if (item is Menu)
 				{
 					var m = item as Menu;

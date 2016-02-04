@@ -130,7 +130,8 @@ namespace Thresh {
 			/// <summary>
 			///     The position from where the skillshot missile gets fired.
 			/// </summary>
-			public Vector3 From {
+			public Vector3 From
+			{
 				get { return _from.To2D().IsValid() ? _from : ObjectManager.Player.ServerPosition; }
 				set { _from = value; }
 			}
@@ -138,8 +139,10 @@ namespace Thresh {
 			/// <summary>
 			///     The position from where the range is checked.
 			/// </summary>
-			public Vector3 RangeCheckFrom {
-				get {
+			public Vector3 RangeCheckFrom
+			{
+				get
+				{
 					return _rangeCheckFrom.To2D().IsValid()
 						? _rangeCheckFrom
 						: (From.To2D().IsValid() ? From : ObjectManager.Player.ServerPosition);
@@ -147,7 +150,8 @@ namespace Thresh {
 				set { _rangeCheckFrom = value; }
 			}
 
-			internal float RealRadius {
+			internal float RealRadius
+			{
 				get { return UseBoundingRadius ? Radius + Unit.BoundingRadius / 2 : Radius; }
 			}
 		}
@@ -177,8 +181,10 @@ namespace Thresh {
 			/// <summary>
 			///     The position where the skillshot should be casted to increase the accuracy.
 			/// </summary>
-			public Vector3 CastPosition {
-				get {
+			public Vector3 CastPosition
+			{
+				get
+				{
 					return _castPosition.IsValid() && _castPosition.To2D().IsValid()
 						? _castPosition.SetZ()
 						: Input.Unit.ServerPosition;
@@ -189,14 +195,16 @@ namespace Thresh {
 			/// <summary>
 			///     The number of targets the skillshot will hit (only if aoe was enabled).
 			/// </summary>
-			public int AoeTargetsHitCount {
+			public int AoeTargetsHitCount
+			{
 				get { return Math.Max(_aoeTargetsHitCount, AoeTargetsHit.Count); }
 			}
 
 			/// <summary>
 			///     The position where the unit is going to be when the skillshot reaches his position.
 			/// </summary>
-			public Vector3 UnitPosition {
+			public Vector3 UnitPosition
+			{
 				get { return _unitPosition.To2D().IsValid() ? _unitPosition.SetZ() : Input.Unit.ServerPosition; }
 				set { _unitPosition = value; }
 			}
@@ -250,7 +258,7 @@ namespace Thresh {
 				if (ft)
 				{
 					//Increase the delay due to the latency and server tick:
-					input.Delay += Game.Ping / 2000f + 0.07f;
+					input.Delay += Game.Ping / 2000f + 0.06f;
 
 					if (input.Aoe)
 					{
@@ -328,13 +336,11 @@ namespace Thresh {
 				//Check for collision
 				if (checkCollision && input.Collision && result.Hitchance > HitChance.Impossible)
 				{
-					var positions = new List<Vector3> { result.CastPosition, result.UnitPosition };
-
-					result.CollisionObjects = Collision.GetCollision(positions, input);
-					result.Hitchance = result.CollisionObjects.Count > 0 ? HitChance.Collision : result.Hitchance;
+					var positions = new List<Vector3> { result.CastPosition };
+					var originalUnit = input.Unit;
+					if (Collision.GetCollision(positions, input))
+						result.Hitchance = HitChance.Collision;
 				}
-
-
 				return result;
 			}
 
@@ -371,20 +377,21 @@ namespace Thresh {
 
 				if (Math.Abs(input.Speed - float.MaxValue) < float.Epsilon)
 					speedDelay = 0;
-				else
-					speedDelay = distanceFromToUnit / input.Speed;
 
 				float totalDelay = speedDelay + input.Delay;
 				float moveArea = input.Unit.MoveSpeed * totalDelay;
 				float fixRange = moveArea * 0.5f;
-				double angleMove = 30 + (input.Radius / 13) - (totalDelay * 2);
+				double angleMove = 30 + (input.Radius / 20) - totalDelay - input.Delay;
 				float backToFront = moveArea * 1.5f;
-				float pathMinLen = 1000f;
+				float pathMinLen = 1100f;
+
+				if (angleMove < 31)
+					angleMove = 31;
 
 				if (UnitTracker.GetLastNewPathTime(input.Unit) < 0.1d)
 				{
-					pathMinLen = 700f + backToFront;
 					result.Hitchance = HitChance.High;
+					pathMinLen = 900;
 				}
 
 				if (input.Type == SkillshotType.SkillshotCircle)
@@ -396,6 +403,7 @@ namespace Thresh {
 
 				if (UnitTracker.PathCalc(input.Unit))
 				{
+					//Program.debug("PRED: SPAM CLICK");
 					if (distanceFromToUnit < input.Range - fixRange)
 					{
 						result.Hitchance = HitChance.VeryHigh;
@@ -408,16 +416,18 @@ namespace Thresh {
 
 				// NEW VISABLE ///////////////////////////////////////////////////////////////////////////////////
 
-				if (UnitTracker.GetLastVisableTime(input.Unit) < 0.08d)
+				if (UnitTracker.GetLastVisableTime(input.Unit) < 0.1d)
 				{
+					//Program.debug("PRED: NEW VISABLE");
 					result.Hitchance = HitChance.Medium;
 					return result;
 				}
 
 				// SPECIAL CASES ///////////////////////////////////////////////////////////////////////////////////
 
-				if (distanceFromToUnit < 300 || distanceFromToWaypoint < 200)
+				if (distanceFromToUnit < 200 || distanceFromToWaypoint < 200)
 				{
+					//Program.debug("PRED: SPECIAL CASES");
 					result.Hitchance = HitChance.VeryHigh;
 					return result;
 
@@ -427,16 +437,27 @@ namespace Thresh {
 
 				if (distanceUnitToWaypoint > pathMinLen)
 				{
+					//Program.debug("PRED: LONG CLICK DETECTION");
 					result.Hitchance = HitChance.VeryHigh;
 					return result;
 				}
 
 				// RUN IN LANE DETECTION ///////////////////////////////////////////////////////////////////////////////////
 
-				if (distanceFromToWaypoint > distanceFromToUnit + fixRange && GetAngle(input.From, input.Unit) < angleMove)
+				if (distanceFromToWaypoint > 200 && input.Unit.Path.Count() == 1 && GetAngle(input.From, input.Unit) < angleMove)
 				{
-					result.Hitchance = HitChance.VeryHigh;
-					return result;
+					if (!input.Unit.IsFacing(ObjectManager.Player))
+					{
+						//Program.debug(GetAngle(input.From, input.Unit) + " PRED: RUN IN LANE DETECTION " + angleMove);
+						result.Hitchance = HitChance.VeryHigh;
+						return result;
+					}
+					else if (UnitTracker.GetLastNewPathTime(input.Unit) < 0.1d)
+					{
+						//Program.debug(GetAngle(input.From, input.Unit) + " PRED: ANGLE " + angleMove);
+						result.Hitchance = HitChance.VeryHigh;
+						return result;
+					}
 				}
 
 				// FIX RANGE ///////////////////////////////////////////////////////////////////////////////////
@@ -459,6 +480,7 @@ namespace Thresh {
 					else
 						result.Hitchance = HitChance.High;
 
+					//Program.debug("PRED: AUTO ATTACK DETECTION");
 					return result;
 				}
 
@@ -475,32 +497,24 @@ namespace Thresh {
 					{
 						if (distanceFromToUnit > input.Range - fixRange)
 							result.Hitchance = HitChance.Medium;
-						else if (UnitTracker.GetLastStopMoveTime(input.Unit) < 0.8d)
+						else if (UnitTracker.GetLastStopMoveTime(input.Unit) > 0.8d)
 							result.Hitchance = HitChance.High;
 						else
 							result.Hitchance = HitChance.VeryHigh;
+
+						//Program.debug("PRED: STOP LOGIC");
 						return result;
 					}
 				}
 
-				// ANGLE HIT CHANCE ///////////////////////////////////////////////////////////////////////////////////
-
-				if (input.Type == SkillshotType.SkillshotLine && input.Unit.Path.Count() > 0 && input.Unit.IsMoving)
-				{
-					if (GetAngle(input.From, input.Unit) < angleMove)
-					{
-						result.Hitchance = HitChance.VeryHigh;
-						return result;
-
-					}
-				}
 
 				// CIRCLE NEW PATH ///////////////////////////////////////////////////////////////////////////////////
 
 				if (input.Type == SkillshotType.SkillshotCircle)
 				{
-					if (UnitTracker.GetLastNewPathTime(input.Unit) < 0.1d && distanceFromToUnit < input.Range - fixRange && distanceUnitToWaypoint > fixRange)
+					if (UnitTracker.GetLastNewPathTime(input.Unit) < 0.1d && distanceUnitToWaypoint > fixRange && distanceFromToUnit < input.Range - fixRange && distanceUnitToWaypoint > fixRange)
 					{
+						//Program.debug("PRED: CIRCLE NEW PATH");
 						result.Hitchance = HitChance.VeryHigh;
 						return result;
 					}
@@ -1024,26 +1038,33 @@ namespace Thresh {
 		}
 
 		public static class Collision {
-			private static int _wallCastT;
-			private static Vector2 _yasuoWallCastedPos;
-
 			static Collision() {
-				Obj_AI_Base.OnProcessSpellCast += Obj_AI_Hero_OnProcessSpellCast;
-			}
 
-			private static void Obj_AI_Hero_OnProcessSpellCast(Obj_AI_Base sender, GameObjectProcessSpellCastEventArgs args) {
-				if (sender.IsValid && sender.Team != ObjectManager.Player.Team && args.SData.Name == "YasuoWMovingWall")
-				{
-					_wallCastT = Utils.TickCount;
-					_yasuoWallCastedPos = sender.ServerPosition.To2D();
-				}
 			}
 
 			/// <summary>
 			///     Returns the list of the units that the skillshot will hit before reaching the set positions.
 			/// </summary>
-			public static List<Obj_AI_Base> GetCollision(List<Vector3> positions, PredictionInput input) {
-				var result = new List<Obj_AI_Base>();
+			/// 
+			private static bool MinionIsDead(PredictionInput input, Obj_AI_Base minion, float distance) {
+				float delay = (distance / input.Speed) + input.Delay;
+
+				if (Math.Abs(input.Speed - float.MaxValue) < float.Epsilon)
+					delay = input.Delay;
+
+				int convert = (int)(delay * 1000);
+
+				if (HealthPrediction.LaneClearHealthPrediction(minion, convert, 0) <= 0)
+				{
+					return true;
+				}
+				else
+				{
+					return false;
+				}
+			}
+			public static bool GetCollision(List<Vector3> positions, PredictionInput input) {
+
 				foreach (var position in positions)
 				{
 					foreach (var objectType in input.CollisionObjects)
@@ -1051,28 +1072,42 @@ namespace Thresh {
 						switch (objectType)
 						{
 							case CollisionableObjects.Minions:
-								foreach (var minion in ObjectManager.Get<Obj_AI_Minion>().Where(minion =>
-												minion.IsValidTarget(Math.Min(input.Range + input.Radius + 100, 2000), true, input.From)))
+								foreach (var minion in MinionManager.GetMinions(input.From, Math.Min(input.Range + input.Radius + 100, 2000)))
 								{
 									input.Unit = minion;
-									if (minion.Path.Count() > 0)
-									{
-										var minionPrediction = Prediction.GetPrediction(input, true, false);
 
-										if (minionPrediction.CastPosition.To2D().Distance(input.From.To2D(), position.To2D(), true, true) <= Math.Pow((input.Radius + 20 + minion.Path.Count() * minion.BoundingRadius), 2))
-										{
-											result.Add(minion);
-										}
+									var distanceFromToUnit = minion.ServerPosition.Distance(input.From);
+
+									if (distanceFromToUnit < input.Radius)
+									{
+										if (MinionIsDead(input, minion, distanceFromToUnit))
+											continue;
+										else
+											return true;
+									}
+									else if (minion.ServerPosition.Distance(position) < input.Radius)
+									{
+										if (MinionIsDead(input, minion, distanceFromToUnit))
+											continue;
+										else
+											return true;
 									}
 									else
 									{
-										var bonus = 30;
-										if (minion.ServerPosition.To2D().Distance(input.From.To2D()) < input.Radius)
-											result.Add(minion);
-										else if (minion.ServerPosition.To2D().Distance(input.From.To2D(), position.To2D(), true, true) <=
-											Math.Pow((input.Radius + bonus + minion.BoundingRadius), 2))
+										var minionPos = minion.ServerPosition;
+										int bonusRadius = 20;
+										if (minion.IsMoving)
 										{
-											result.Add(minion);
+											minionPos = Prediction.GetPrediction(input, false, false).CastPosition;
+											bonusRadius = 60 + (int)input.Radius;
+										}
+
+										if (minionPos.To2D().Distance(input.From.To2D(), position.To2D(), true, true) <= Math.Pow((input.Radius + bonusRadius + minion.BoundingRadius), 2))
+										{
+											if (MinionIsDead(input, minion, distanceFromToUnit))
+												continue;
+											else
+												return true;
 										}
 									}
 								}
@@ -1092,7 +1127,7 @@ namespace Thresh {
 											.Distance(input.From.To2D(), position.To2D(), true, true) <=
 										Math.Pow((input.Radius + 50 + hero.BoundingRadius), 2))
 									{
-										result.Add(hero);
+										return true;
 									}
 								}
 								break;
@@ -1104,14 +1139,14 @@ namespace Thresh {
 									var p = input.From.To2D().Extend(position.To2D(), step * i);
 									if (NavMesh.GetCollisionFlags(p.X, p.Y).HasFlag(CollisionFlags.Wall))
 									{
-										result.Add(ObjectManager.Player);
+										return true;
 									}
 								}
 								break;
 						}
 					}
 				}
-				return result.Distinct().ToList();
+				return false;
 			}
 		}
 
@@ -1173,30 +1208,25 @@ namespace Thresh {
 				}
 				Obj_AI_Base.OnProcessSpellCast += Obj_AI_Base_OnProcessSpellCast;
 				Obj_AI_Base.OnNewPath += Obj_AI_Hero_OnNewPath;
-				Game.OnUpdate += Game_OnGameUpdate;
+				Obj_AI_Base.OnEnterLocalVisiblityClient += Obj_AI_Base_OnEnterLocalVisiblityClient;
 			}
 
-			private static void Game_OnGameUpdate(EventArgs args) {
-				foreach (var hero in Champion)
-				{
-					if (hero.IsVisible)
-					{
-						if (hero.Path.Count() > 0)
-							UnitTrackerInfoList.Find(x => x.NetworkId == hero.NetworkId).StopMoveTick = Utils.TickCount;
-					}
-					else
-					{
-						UnitTrackerInfoList.Find(x => x.NetworkId == hero.NetworkId).LastInvisableTick = Utils.TickCount;
-					}
-				}
+			private static void Obj_AI_Base_OnEnterLocalVisiblityClient(AttackableUnit sender, EventArgs args) {
+				if (sender.Type != GameObjectType.obj_AI_Hero) return;
+
+				UnitTrackerInfoList.Find(x => x.NetworkId == sender.NetworkId).LastInvisableTick = Utils.TickCount;
 			}
 
 			private static void Obj_AI_Hero_OnNewPath(Obj_AI_Base sender, GameObjectNewPathEventArgs args) {
-				if (sender.IsMinion || !(sender is Obj_AI_Hero)) return;
+				if (sender.Type != GameObjectType.obj_AI_Hero) return;
 
 				var info = UnitTrackerInfoList.Find(x => x.NetworkId == sender.NetworkId);
+
 				info.NewPathTick = Utils.TickCount;
-				if (args.Path.Last() != sender.ServerPosition)
+
+				if (args.Path.Count() == 1) // STOP MOVE DETECTION
+					UnitTrackerInfoList.Find(x => x.NetworkId == sender.NetworkId).StopMoveTick = Utils.TickCount;
+				else // SPAM CLICK LOGIC
 					info.PathBank.Add(new PathInfo() { Position = args.Path.Last().To2D(), Time = Game.Time });
 
 				if (info.PathBank.Count > 3)
@@ -1204,7 +1234,7 @@ namespace Thresh {
 			}
 
 			private static void Obj_AI_Base_OnProcessSpellCast(Obj_AI_Base sender, GameObjectProcessSpellCastEventArgs args) {
-				if (sender.IsMinion || !sender.IsValid<Obj_AI_Hero>()) return;
+				if (sender.Type != GameObjectType.obj_AI_Hero) return;
 
 				if (args.SData.IsAutoAttack())
 					UnitTrackerInfoList.Find(x => x.NetworkId == sender.NetworkId).AaTick = Utils.TickCount;
@@ -1223,7 +1253,7 @@ namespace Thresh {
 				if (TrackerUnit.PathBank.Count < 3)
 					return false;
 
-				if (TrackerUnit.PathBank[2].Time - TrackerUnit.PathBank[0].Time < 0.40f && TrackerUnit.PathBank[2].Time + 0.1f < Game.Time && TrackerUnit.PathBank[2].Time + 0.2f > Game.Time && TrackerUnit.PathBank[1].Position.Distance(TrackerUnit.PathBank[2].Position) > unit.Distance(TrackerUnit.PathBank[2].Position))
+				if (TrackerUnit.PathBank[2].Time - TrackerUnit.PathBank[0].Time < 0.35f && TrackerUnit.PathBank[2].Time + 0.1f < Game.Time && TrackerUnit.PathBank[2].Time + 0.2f > Game.Time && TrackerUnit.PathBank[1].Position.Distance(TrackerUnit.PathBank[2].Position) > unit.Distance(TrackerUnit.PathBank[2].Position))
 				{
 					return true;
 				}
