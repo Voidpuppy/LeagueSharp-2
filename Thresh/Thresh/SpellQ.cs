@@ -28,13 +28,13 @@ namespace Thresh {
 			}
 			else if (Config.Item("预判模式").GetValue<StringList>().SelectedIndex == 1)
 			{
-				var hitChangceList = new[] { OKTWPrediction.HitChance.VeryHigh, OKTWPrediction.HitChance.High, OKTWPrediction.HitChance.Medium };
+				var hitChangceList = new[] { SebbyLib.Prediction.HitChance.VeryHigh, SebbyLib.Prediction.HitChance.High, SebbyLib.Prediction.HitChance.Medium };
 				return Q.CastOKTW(target, hitChangceList[hitChangceIndex]);
 			}
 			return false;
 		}
 
-		public static bool CastOKTW(this Spell spell, Obj_AI_Hero target,OKTWPrediction.HitChance hitChance) {
+		public static bool CastOKTW(this Spell spell, Obj_AI_Hero target, SebbyLib.Prediction.HitChance hitChance) {
 			SebbyLib.Prediction.SkillshotType CoreType2 = SebbyLib.Prediction.SkillshotType.SkillshotLine;
 			bool aoe2 = false;
 

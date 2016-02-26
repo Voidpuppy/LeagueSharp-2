@@ -79,7 +79,11 @@ namespace Thresh {
 			return tur;
 		}
 
+
+
 		public static bool IsInTurret(this Obj_AI_Base targetHero, Obj_AI_Turret targetTurret = null) {
+			
+
 			if (targetTurret == null)
 			{
 				targetTurret = targetHero.GetMostCloseTower();

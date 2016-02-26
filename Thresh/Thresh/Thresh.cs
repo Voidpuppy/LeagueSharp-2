@@ -150,15 +150,6 @@ namespace Thresh {
 			}
 			#endregion
 
-			#region 亚索风墙
-			if (sender.IsEnemy && args.SData.Name == "YasuoWMovingWall")
-			{
-				OKTWPrediction.yasuoWall.CastTime = Game.Time;
-				OKTWPrediction.yasuoWall.CastPosition = sender.Position.Extend(args.End, 400);
-				OKTWPrediction.yasuoWall.YasuoPosition = sender.Position;
-				OKTWPrediction.yasuoWall.WallLvl = sender.Spellbook.Spells[1].Level;
-			}
-			#endregion
 		}
 
 		private static void Spellbook_OnCastSpell(Spellbook sender, SpellbookCastSpellEventArgs args) {
@@ -173,15 +164,15 @@ namespace Thresh {
 					&& SpellQ.GetState()== QState.threshqleap 
 					&& Orbwalker.ActiveMode == Orbwalking.OrbwalkingMode.Combo)
 				{
-					if (QTarget.UnderTurret(true) || QTarget.InFountain())
-					{
-						args.Process = false;
-					}
-					//var tower = QTarget.GetMostCloseTower();
-					//if ((tower != null && QTarget.IsInTurret(tower) && tower.IsEnemy) || (QTarget.Type == GameObjectType.obj_AI_Hero && ((Obj_AI_Hero)QTarget).InFountain()))
+					//if (QTarget.UnderTurret(true) || QTarget.InFountain())
 					//{
 					//	args.Process = false;
 					//}
+					var tower = QTarget.GetMostCloseTower();
+					if ((tower != null && QTarget.IsInTurret(tower) && tower.IsEnemy) || (QTarget.Type == GameObjectType.obj_AI_Hero && ((Obj_AI_Hero)QTarget).InFountain()))
+					{
+						args.Process = false;
+					}
 				}
 			}
 		}
@@ -264,7 +255,7 @@ namespace Thresh {
 
 				//Q2逻辑
 				if (SpellQ.GetState() == QState.threshqleap 
-					&& QTarget.Position.CountEnemiesInRange(700) - Player.Position.CountEnemiesInRange(700) < Config.Item("人数比").GetValue<Slider>().Value)
+					&& QTarget.Position.CountEnemiesInRange(700) - Player.Position.CountEnemiesInRange(700) <= Config.Item("人数比").GetValue<Slider>().Value)
 				{
 					SpellQ.CastQ2();
 				}
