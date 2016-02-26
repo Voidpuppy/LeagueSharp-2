@@ -37,16 +37,19 @@
   </PropertyGroup>
   <ItemGroup>
     <Reference Include="LeagueSharp">
-      <HintPath>C:\Users\Ghost\Desktop\LSFU\System\LeagueSharp.dll</HintPath>
+      <HintPath>..\..\..\..\LSF代码\LeagueSharp.Loader-2.0.13.21\bin\Release\System\LeagueSharp.dll</HintPath>
     </Reference>
     <Reference Include="LeagueSharp.Common">
-      <HintPath>C:\Users\Ghost\Desktop\LSFU\System\LeagueSharp.Common.dll</HintPath>
+      <HintPath>..\..\..\..\LSF代码\LeagueSharp.Loader-2.0.13.21\bin\Release\System\LeagueSharp.Common.dll</HintPath>
+    </Reference>
+    <Reference Include="SebbyLib">
+      <HintPath>..\..\..\..\LSF代码\LeagueSharp.Loader-2.0.13.21\bin\Release\System\SebbyLib.dll</HintPath>
     </Reference>
     <Reference Include="SharpDX">
-      <HintPath>C:\Users\Ghost\Desktop\LSFU\System\SharpDX.dll</HintPath>
+      <HintPath>..\..\..\..\LSF代码\LeagueSharp.Loader-2.0.13.21\bin\Release\System\SharpDX.dll</HintPath>
     </Reference>
     <Reference Include="SharpDX.Direct3D9">
-      <HintPath>C:\Users\Ghost\Desktop\LSFU\System\SharpDX.Direct3D9.dll</HintPath>
+      <HintPath>..\..\..\..\LSF代码\LeagueSharp.Loader-2.0.13.21\bin\Release\System\SharpDX.Direct3D9.dll</HintPath>
     </Reference>
     <Reference Include="System" />
     <Reference Include="System.Core" />
@@ -63,7 +66,6 @@
     <Compile Include="Extensions.cs" />
     <Compile Include="MultiLanguage.cs" />
     <Compile Include="OKTWPrediction.cs" />
-    <Compile Include="Orbwalking.cs" />
     <Compile Include="Program.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="SpellQ.cs" />
