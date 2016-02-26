@@ -173,11 +173,15 @@ namespace Thresh {
 					&& SpellQ.GetState()== QState.threshqleap 
 					&& Orbwalker.ActiveMode == Orbwalking.OrbwalkingMode.Combo)
 				{
-					var tower = QTarget.GetMostCloseTower();
-					if ((tower != null && QTarget.IsInTurret(tower) && tower.IsEnemy) || (QTarget.Type == GameObjectType.obj_AI_Hero && ((Obj_AI_Hero)QTarget).InFountain()))
+					if (QTarget.UnderTurret(true) || QTarget.InFountain())
 					{
 						args.Process = false;
 					}
+					//var tower = QTarget.GetMostCloseTower();
+					//if ((tower != null && QTarget.IsInTurret(tower) && tower.IsEnemy) || (QTarget.Type == GameObjectType.obj_AI_Hero && ((Obj_AI_Hero)QTarget).InFountain()))
+					//{
+					//	args.Process = false;
+					//}
 				}
 			}
 		}
@@ -391,6 +395,8 @@ namespace Thresh {
 		}
 
 		private static Obj_AI_Hero GetTarget() {
+			
+
 			var target = TargetSelector.GetTarget(Q.Range, TargetSelector.DamageType.Magical, false, Qignored);
 			var adc = GetAdc();
 			if (adc != null && Config.Item("辅助目标").GetValue<bool>())
@@ -406,7 +412,7 @@ namespace Thresh {
 
 		private static Obj_AI_Base GetAdc(float range = 1075) {
 			Obj_AI_Base Adc = null;
-			foreach (var ally in HeroManager.Allies.Where(a => !a.IsDead))
+			foreach (var ally in HeroManager.Allies.Where(a =>!a.IsMe && !a.IsDead))
 			{
 				if (Adc == null)
 				{
