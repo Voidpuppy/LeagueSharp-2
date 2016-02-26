@@ -43,6 +43,16 @@ namespace Thresh {
 			Spellbook.OnCastSpell += Spellbook_OnCastSpell;
 			Obj_AI_Base.OnProcessSpellCast += Obj_AI_Base_OnProcessSpellCast;
 			Game.OnWndProc += Game_OnWndProc;
+			Orbwalking.BeforeAttack += Orbwalking_BeforeAttack;
+		}
+
+		private static void Orbwalking_BeforeAttack(Orbwalking.BeforeAttackEventArgs args) {
+			if (Config.Item("辅助模式").GetValue<bool>() 
+				&& GetAdc(Config.Item("辅助模式距离").GetValue<Slider>().Value) != null
+				&& (Orbwalker.ActiveMode == Orbwalking.OrbwalkingMode.Mixed || Orbwalker.ActiveMode== Orbwalking.OrbwalkingMode.LastHit || Orbwalker.ActiveMode == Orbwalking.OrbwalkingMode.LaneClear))
+			{
+				args.Process = false;
+			}
 		}
 
 		private static void Game_OnWndProc(WndEventArgs args) {
@@ -567,7 +577,6 @@ namespace Thresh {
 			var OrbMenu = new Menu("Orbwalker", "走砍设置");
 			Orbwalker = new Orbwalking.Orbwalker(OrbMenu);
 			Config.AddSubMenu(OrbMenu);
-			Orbwalker.RegisterCustomMode("逃跑", "逃跑", 'A');
 
 			var SpellConfig = Config.AddSubMenu(new Menu("Spell Settings", "技能设置"));
 			SpellConfig.AddItem(new MenuItem("位移Q", "Auto Q Dash Enemy").SetValue(true));

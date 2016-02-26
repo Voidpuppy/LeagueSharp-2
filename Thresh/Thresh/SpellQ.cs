@@ -14,7 +14,7 @@ namespace Thresh {
 		Cooldown
 	}
 
-	public class SpellQ {
+	public static class SpellQ {
 
 		public static bool CastQ1(Obj_AI_Hero target) {
 			var Config = Thresh.Config;
@@ -29,48 +29,55 @@ namespace Thresh {
 			else if (Config.Item("预判模式").GetValue<StringList>().SelectedIndex == 1)
 			{
 				var hitChangceList = new[] { OKTWPrediction.HitChance.VeryHigh, OKTWPrediction.HitChance.High, OKTWPrediction.HitChance.Medium };
-				return CastOKTW(target, hitChangceList[hitChangceIndex]);
+				return Q.CastOKTW(target, hitChangceList[hitChangceIndex]);
 			}
 			return false;
 		}
 
-		public static bool CastOKTW(Obj_AI_Hero target,OKTWPrediction.HitChance hitChance) {
-			var spell = Thresh.Q;
-			var Player = Thresh.Player;
-
-            OKTWPrediction.SkillshotType CoreType2 = OKTWPrediction.SkillshotType.SkillshotLine;
+		public static bool CastOKTW(this Spell spell, Obj_AI_Hero target,OKTWPrediction.HitChance hitChance) {
+			SebbyLib.Prediction.SkillshotType CoreType2 = SebbyLib.Prediction.SkillshotType.SkillshotLine;
 			bool aoe2 = false;
 
-			var predInput2 = new OKTWPrediction.PredictionInput
+			if (spell.Type == SkillshotType.SkillshotCircle)
+			{
+				CoreType2 = SebbyLib.Prediction.SkillshotType.SkillshotCircle;
+				aoe2 = true;
+			}
+
+			if (spell.Width > 80 && !spell.Collision)
+				aoe2 = true;
+
+			var predInput2 = new SebbyLib.Prediction.PredictionInput
 			{
 				Aoe = aoe2,
 				Collision = spell.Collision,
 				Speed = spell.Speed,
 				Delay = spell.Delay,
 				Range = spell.Range,
-				From = Player.ServerPosition,
+				From = HeroManager.Player.ServerPosition,
 				Radius = spell.Width,
 				Unit = target,
 				Type = CoreType2
 			};
-			var poutput2 = OKTWPrediction.Prediction.GetPrediction(predInput2);
+			var poutput2 = SebbyLib.Prediction.Prediction.GetPrediction(predInput2);
 
-			if (spell.Speed != float.MaxValue && OKTWPrediction.CollisionYasuo(Player.ServerPosition, poutput2.CastPosition))
+			if (spell.Speed != float.MaxValue && SebbyLib.OktwCommon.CollisionYasuo(HeroManager.Player.ServerPosition, poutput2.CastPosition))
 				return false;
 
-			if (poutput2.Hitchance >= hitChance)
+			if (poutput2.Hitchance >= SebbyLib.Prediction.HitChance.VeryHigh)
 			{
 				return spell.Cast(poutput2.CastPosition);
 			}
+			else if (predInput2.Aoe && poutput2.AoeTargetsHitCount > 1 && poutput2.Hitchance >= SebbyLib.Prediction.HitChance.High)
+			{
+				return spell.Cast(poutput2.CastPosition);
+			}
+
 			return false;
 		}
 
 		public static bool CastQ2() {
 			if (Thresh.QTarget is Obj_AI_Hero && Thresh.QTarget.GetPassiveTime("ThreshQ") < 0.3)
-			{
-				return Thresh.Q.Cast();
-			}
-			else if (Thresh.QTarget.IsMinion)
 			{
 				return Thresh.Q.Cast();
 			}
