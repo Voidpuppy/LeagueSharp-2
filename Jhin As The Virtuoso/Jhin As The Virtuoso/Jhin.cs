@@ -34,6 +34,8 @@ namespace Jhin_As_The_Virtuoso {
 				Config.Item("第三次延迟").GetValue<Slider>().Value
 		};
 
+		public static Dictionary<int, float> PingList { get; set; } = new Dictionary<int, float>();
+
 		public static Items.Item BlueTrinket = new Items.Item(3342, 3500f);
 		public static Items.Item ScryingOrb = new Items.Item(3363, 3500f);
 
@@ -53,6 +55,11 @@ namespace Jhin_As_The_Virtuoso {
 			LoadMenu();
 			LoadEvents();
 
+			//初始化ping时间
+			foreach (var enemy in HeroManager.Enemies)
+			{
+				PingList.Add(enemy.NetworkId, 0);
+			}
 			LastPosition.Load();
 
 			DamageIndicator.DamageToUnit = GetRDmg;
@@ -394,9 +401,12 @@ namespace Jhin_As_The_Virtuoso {
 						KillableList.Add(enemy);
 					}
 
-					if (Config.Item("击杀信号提示").GetValue<bool>())
+					if (Config.Item("击杀信号提示").GetValue<bool>() && Game.Time - PingList[enemy.NetworkId] > 10 * 1000)
 					{
 						Game.ShowPing(PingCategory.AssistMe, enemy, true);
+						Game.ShowPing(PingCategory.AssistMe, enemy, true);
+						Game.ShowPing(PingCategory.AssistMe, enemy, true);
+						PingList[enemy.NetworkId] = Game.ClockTime;
 					}
 				}
 				else
