@@ -61,6 +61,10 @@ namespace Jhin_As_The_Virtuoso {
 			{
 				BushList = GetBushInRCone();
 			}
+			if (BushList == null)
+			{
+				return Vector3.Zero;
+			}
 
 			Vector3 temp = Vector3.Zero;
 			foreach (var bush in BushList)

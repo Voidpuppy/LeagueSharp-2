@@ -34,7 +34,8 @@ namespace Jhin_As_The_Virtuoso {
 					lp.LastPosition.Distance(lp.Hero.Position) > 500)
 				{
 					lp.Teleported = false;
-					lp.LastSeen = Game.Time;
+					lp.LastSeen = Game.ClockTime;
+					
 				}
 				lp.LastPosition = lp.Hero.Position;
 				if (lp.Hero.IsVisible)
@@ -42,7 +43,7 @@ namespace Jhin_As_The_Virtuoso {
 					lp.Teleported = false;
 					if (!lp.Hero.IsDead)
 					{
-						lp.LastSeen = Game.Time;
+						lp.LastSeen = Game.ClockTime;
 					}
 				}
 			}
@@ -64,7 +65,7 @@ namespace Jhin_As_The_Virtuoso {
 					case Packet.S2C.Teleport.Status.Finish:
 						lastPosition.Teleported = true;
 						lastPosition.IsTeleporting = false;
-						lastPosition.LastSeen = Game.Time;
+						lastPosition.LastSeen = Game.ClockTime;
 						break;
 				}
 			}

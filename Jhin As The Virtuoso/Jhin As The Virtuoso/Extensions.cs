@@ -161,10 +161,6 @@ namespace Jhin_As_The_Virtuoso {
 
 			return false;
 		}
-
-		public static MenuItem AddLabel(this Menu config,string name,string label) {
-			return config.AddItem(new MenuItem(name,label));
-		}
 		
 	}
 }
