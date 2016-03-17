@@ -4,11 +4,12 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 using LeagueSharp.Common;
+using System.Threading;
 
 namespace CNLib {
 	public static class MultiLanguage {
 		private static Dictionary<string, string> Translations { get; set; } = new Dictionary<string, string>();
-		private static string _language = "English";
+
 		public static string _(string textToTranslate) {
 			var show = string.Empty;
 			if (string.IsNullOrEmpty(textToTranslate))
@@ -31,28 +32,39 @@ namespace CNLib {
 			return show;
 		}
 
-		public static void SetLanguage(string l) {
-			_language = l;
+		public static void Load(Dictionary<string, Dictionary<string, string>> LanguageDictionary) {
+			
+			if (!IsChinese())
+			{
+				Translations = LanguageDictionary["English"];
+			}
+
 		}
 
-		public static void Load(Dictionary<string, string> LanguageDictionary) {
-			//DeBug.Debug("[MultiLanguage]", $"加载字典中，语言：{Config.SelectedLanguage}");
+		public static bool IsChinese() {
+			
 			if (!string.IsNullOrEmpty(Config.SelectedLanguage))
 			{
+				
 				if (Config.SelectedLanguage != "Chinese")
 				{
-					Translations = LanguageDictionary;
+					return true;
 				}
 			}
 			else
 			{
-				if (_language != "Chinese")
+				var CultureName = System.Globalization.CultureInfo.InstalledUICulture.Name;
+				var lid = CultureName.Contains("-")
+						? CultureName.Split('-')[0].ToUpperInvariant()
+						: CultureName.ToUpperInvariant();
+				DeBug.Debug($"lid:{System.Globalization.CultureInfo.InstalledUICulture.Name}");
+				DeBug.Debug($"lid:{lid}");
+				if (lid == "ZH")
 				{
-					Translations = LanguageDictionary;
+					return true;
 				}
 			}
+			return false;
 		}
-
-		
 	}
 }

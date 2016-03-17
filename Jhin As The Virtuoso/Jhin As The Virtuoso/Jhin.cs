@@ -10,6 +10,7 @@ using SharpDX;
 using DXColor = SharpDX.Color;
 using Color = System.Drawing.Color;
 using OKTWPrediction = SebbyLib.Prediction.Prediction;
+using Orbwalking = LeagueSharp.Common.Orbwalking;
 using FS = System.Drawing.FontStyle;
 using SharpDX.Direct3D9;
 using CNLib;
@@ -17,7 +18,7 @@ using CNLib;
 namespace Jhin_As_The_Virtuoso {
 
 	class Jhin {
-		public static Menu Config { get; set; } = new Menu("","",true);
+		public static Menu Config { get; set; }
 		public static Obj_AI_Hero Player => HeroManager.Player;
 		public static Orbwalking.Orbwalker Orbwalker { get; private set; }
 		public static Spell Q { get; set; }
@@ -49,12 +50,10 @@ namespace Jhin_As_The_Virtuoso {
 		internal static void OnLoad(EventArgs args) {
 			if (Player.ChampionName!="Jhin"){ return; }
 
-			IsChinese = (LeagueSharp.Common.Config.SelectedLanguage == "Chinese") || (
-				string.IsNullOrEmpty(LeagueSharp.Common.Config.SelectedLanguage) &&
-				storage.ReadFile() == "Chinese"
-				);
-			CNLib.MultiLanguage.SetLanguage(IsChinese ? "Chinese" : "English");
-			CNLib.MultiLanguage.Load(MultiLanguage.EnglishDictionary);
+			IsChinese = CNLib.MultiLanguage.IsChinese();
+			CNLib.MultiLanguage.Load(new Dictionary<string, Dictionary<string, string>>() {
+				{ "English",MultiLanguage.EnglishDictionary}
+			});
 
 			LoadSpell();
 			LoadMenu();
@@ -905,17 +904,6 @@ namespace Jhin_As_The_Virtuoso {
 			DMenu.AddLabel("伤害提示").SetFontStyle(FS.Bold, DXColor.Orange);
 			DMenu.AddCircle("大招伤害", "显示四次大招后伤害", true, Color.Red);
 
-			
-			if (string.IsNullOrEmpty(LeagueSharp.Common.Config.SelectedLanguage))
-			{
-				var LMenu = Config.AddMenu("语言设置", "Language Settings");
-				LMenu.AddLabel("Press F5 reload assebmly to change language").SetFontStyle(FS.Bold, DXColor.Orange);
-				LMenu.AddStringList("选择语言", "Select language", new[] { "English", "中文" },IsChinese?1:0).ValueChanged += (s,e) => {
-					//storage.Set("language", e.GetNewValue<StringList>().SelectedIndex == 0 ? "English" : "Chinese");
-					//storage.Save();
-					storage.SaveFile(e.GetNewValue<StringList>().SelectedIndex == 0 ? "English" : "Chinese");
-				} ;
-			}
 		}
 
 	}
