@@ -8,21 +8,28 @@ using LeagueSharp.Common;
 using SharpDX;
 using SharpDX.Direct3D9;
 using Color = System.Drawing.Color;
+using CNLib;
+using SebbyLib;
+using SebbyPredict = SebbyLib.Prediction;
+using Orbwalking = LeagueSharp.Common.Orbwalking;
 
 namespace Mark_As_Dash {
 	class Program {
 
-		public static Obj_AI_Hero Player = ObjectManager.Player;
-		public static Obj_AI_Base MarkTarget;
-        public static Menu Config;
-		public static Spell SnowBall;
+		public static Obj_AI_Hero Player => ObjectManager.Player;
+		public static Obj_AI_Base MarkTarget { get; set; }
+		public static Menu Config { get; set; }
+		public static Spell SnowBall { get; set; } = null;
+		public static Spell Q, W, E, R;
 		public static Font font;
 		public static List<Obj_AI_Hero> ignoreList = new List<Obj_AI_Hero>();
-		public static List<TargetSelector.DamageType> DamageTypeList = new List<TargetSelector.DamageType>{ TargetSelector.DamageType .Magical, TargetSelector.DamageType .Physical, TargetSelector.DamageType.True};
-		public static ColorBGRA FontColor = new ColorBGRA(Color.YellowGreen.B, Color.YellowGreen.G, Color.YellowGreen.R, Color.YellowGreen.A);
+		public static TargetSelector.DamageType DamageType { get; set; }
+
+		public static bool IsCN => CNLib.MultiLanguage.IsCN;
 
 		static void Main(string[] args) {
 			CustomEvents.Game.OnGameLoad += Game_OnGameLoad;
+			TargetSelector.GetSelectedTarget();
 		}
 
 		private static void Game_OnGameLoad(EventArgs args) {
@@ -30,7 +37,7 @@ namespace Mark_As_Dash {
 			{
 				return;
 			}
-			font = new Font(Drawing.Direct3DDevice, new FontDescription { FaceName = "微软雅黑", Height = 28 });
+			font = new Font(Drawing.Direct3DDevice, new FontDescription { FaceName = "微软雅黑", Height = 30 });
 
 			LoadMenu();
 
@@ -39,99 +46,156 @@ namespace Mark_As_Dash {
 		}
 
 		private static void Drawing_OnDraw(EventArgs args) {
-			//font.DrawTextCentered("标记中目标：" + Player.ChampionName + "(" + Player.Name.ToGBK() + ")", Drawing.WorldToScreen(Player.Position), FontColor);
-
-			if (Config.Item(Player.ChampionName + "DamageType").GetValue<StringList>().SelectedIndex == 0)
+			var DrawMarkShow = Config.GetCircle("标记提醒");
+			if (Config.GetStringIndex("伤害类型" + Player.ChampionName) == 0)
 			{
-				font.DrawTextCentered("请先设置你的伤害类型", Drawing.WorldToScreen(Player.Position), FontColor);
+				font.DrawScreenPercent("[雪球] 必须先设置伤害类型，才能正确获取目标", DrawMarkShow.Color, 50,50);
 				return;
 			}
 
-			if (MarkTarget!=null)
+			
+			if (MarkTarget!=null && DrawMarkShow.Active)
 			{
+				var MarkTargetName = IsCN ? "标记中目标" : "Marked Enemy";
+				var MarkTargetHealth = IsCN ? "目标血量":"Target Health";
+
 				if (MarkTarget.Type == GameObjectType.obj_AI_Hero)
 				{
 					var target = MarkTarget as Obj_AI_Hero;
-                    font.DrawTextCentered("标记中目标：" + target.ChampionName+"("+target.Name.ToUTF8()+")", Drawing.WorldToScreen(Player.Position), FontColor);
+
+
+
+					var text = $"{MarkTargetName}：{target.ChampionName.ToCN(IsCN)}({target.Name.ToGBK()})\n"
+						+ $"{MarkTargetHealth}：{(int)target.Health}/{(int)target.MaxHealth}     ({(int)target.HealthPercent}%)";
+
+					font.DrawScreenPercent(text,
+                        DrawMarkShow.Color,
+						50, 60);
 				}
 				else if(MarkTarget.Type == GameObjectType.obj_AI_Minion)
 				{
 					var enemies = MarkTarget.GetEnemiesInRange(500);
                     if (enemies.Count<=0)
 					{
-						font.DrawTextCentered("标记中小兵附近没有敌人", Drawing.WorldToScreen(Player.Position), FontColor);
+						font.DrawScreenPercent("标记中小兵附近没有敌人",
+							DrawMarkShow.Color,
+							50, 60);
 					}
 					else
 					{
-						if (enemies.Count <=2 && enemies.Any(e => e.HealthPercent<20))
+						var text = IsCN
+							? $"标记中小兵500码内有{enemies.Count}个敌人\n"
+							: $"{enemies.Count}enemies nearby marked minion\n";
+						if (enemies.Any(e => e.HealthPercent<20))
 						{
-							font.DrawTextCentered("标记中小兵500码内有一个残血敌人", Drawing.WorldToScreen(Player.Position), FontColor);
+							text += IsCN? "标记中小兵500码内有残血敌人": "Find low health enemy";
+							
+							foreach (var item in enemies.Where(e => e.HealthPercent < 20))
+							{
+								text += $"\n{item.ChampionName.ToCN(IsCN)}({item.Name.ToGBK()})   {(int)item.HealthPercent}%";
+							}
+
+							font.DrawScreenPercent(text,
+									DrawMarkShow.Color,
+									50, 60);
 						}
-						else
-						{
-							font.DrawTextCentered("标记中小兵500码内有"+ enemies.Count+"个敌人", Drawing.WorldToScreen(Player.Position), FontColor);
-						}
+						
 					}
 					
 				}
 
 			}
-			var DrawRangeShow = Config.Item("DrawRange").GetValue<Circle>();
+			var DrawRangeShow = Config.Item("显示范围").GetValue<Circle>();
             if (DrawRangeShow.Active && GetSnowBallState() == SnowBallState.Mark)
 			{
-				//Render.Circle.DrawCircle(Player.Position,SnowBall.Range,DrawRangeShow.Color,2);
+				Render.Circle.DrawCircle(Player.Position,SnowBall.Range,DrawRangeShow.Color,2);
+			}
+			if (Config.GetBool("小地图显示") && GetSnowBallState() == SnowBallState.Mark)
+			{
 				Utility.DrawCircle(Player.Position, SnowBall.Range, DrawRangeShow.Color, 2, 23, true);
 			}
 		}
 
-		private static void Game_OnUpdate(EventArgs args) {
-			//if (Config.Item("SmitCast").GetValue<KeyBind>().Active)
-			//{
-			//	Console.WriteLine(Utill.GetInfo());
-			//}
-			
+		private static bool MarkByMe(Obj_AI_Base enemy) {
+			var mark = enemy.GetBuff("snowballfollowupself");
+			if (mark!=null && mark.Caster.IsMe)
+			{
+				return true;
+			}
+			mark = enemy.GetBuff("snowballfollowup");
+			if (mark != null && mark.Caster.IsMe)
+			{
+				return true;
+			}
+			mark = enemy.GetBuff("porothrowfollowup");
+			if (mark != null && mark.Caster.IsMe)
+			{
+				return true;
+			}
+			return false;
+		}
 
-			if (Config.Item(Player.ChampionName + "DamageType").GetValue<StringList>().SelectedIndex == 0) return;
+		private static bool InAttackRange(Obj_AI_Hero target) {
+			if ((Config.GetStringIndex("伤害类型" + Player.ChampionName) == 1 || Config.GetStringIndex("伤害类型" + Player.ChampionName) == 3) && Orbwalking.InAutoAttackRange(target))
+			{
+				return true;
+			}
+
+			if (Config.GetStringIndex("伤害类型" + Player.ChampionName) == 2 && (Q.CanCast(target) || W.CanCast(target) || E.CanCast(target) || R.CanCast(target) || Orbwalking.InAutoAttackRange(target)))
+			{
+				return true;
+			}
+			return false;
+		}
+
+		private static void Game_OnUpdate(EventArgs args) {
+			if (Config.GetStringIndex("伤害类型" + Player.ChampionName)==0)
+			{
+				return;
+			}
+
 
 			#region 取雪球标记目标
-			if (GetSnowBallState() == SnowBallState.Dash)
+			foreach (var enemy in ObjectManager.Get<Obj_AI_Base>().Where(o => o.IsEnemy && o.IsValid && !o.IsDead  && (o.Type == GameObjectType.obj_AI_Minion || o.Type == GameObjectType.obj_AI_Hero)))
 			{
-				foreach (var enemy in ObjectManager.Get<Obj_AI_Base>().Where(o => o.IsEnemy && o.IsValid && !o.IsDead && o.Distance(Player) <= SnowBall.Range + 400 && (o.Type == GameObjectType.obj_AI_Minion || o.Type == GameObjectType.obj_AI_Hero)))
+				if (MarkByMe(enemy))
 				{
-					if (enemy.HasBuff("snowballfollowupself")
-						|| enemy.HasBuff("porothrowfollowup"))
-					{
-						MarkTarget = enemy;
-						break;
-					}
-					else
-					{
-						MarkTarget = null;
-					}
+					MarkTarget = enemy;
+					
+					break;
+				}
+				else
+				{
+					MarkTarget = null;
 				}
 			}
-			else
-			{
-				MarkTarget = null;
-			}
+			
 			#endregion
 
-			#region 连招时 标记目标 或 打伤害
-		
-			if (Config.Item("Combo").GetValue<KeyBind>().Active)
+			#region 连招 消耗时 标记目标
+			var IsComb = Orbwalking.Orbwalker.Instances.Any(o => o.ActiveMode == Orbwalking.OrbwalkingMode.Combo)
+				|| SebbyLib.Orbwalking.Orbwalker.Instances.Any(o => o.ActiveMode == SebbyLib.Orbwalking.OrbwalkingMode.Combo);
+			var IsHars = Orbwalking.Orbwalker.Instances.Any(o => o.ActiveMode == Orbwalking.OrbwalkingMode.Mixed)
+				|| SebbyLib.Orbwalking.Orbwalker.Instances.Any(o => o.ActiveMode == SebbyLib.Orbwalking.OrbwalkingMode.Mixed);
+			
+
+			if ((Config.GetBool("连招") && IsComb)
+				|| (Config.GetBool("消耗") && IsHars))
 			{
 				if (GetSnowBallState() == SnowBallState.Mark)
 				{
-					var Target = TargetSelector.GetTarget(SnowBall.Range, DamageTypeList[Config.Item(Player.ChampionName + "DamageType").GetValue<StringList>().SelectedIndex], false, ignoreList);
-					//Game.PrintChat("Combo SnowBall");
-					CastMark(Target);
+					var Target = TargetSelector.GetTarget(SnowBall.Range, DamageType, false, ignoreList);
+					if (Target!=null && !InAttackRange(Target))
+					{
+						CastMark(Target);
+					}
+					
                 }
-				
 			}
 			#endregion
 
 			#region 抢人头
-			if (Config.Item("KS").GetValue<bool>())
+			if (Config.GetBool("抢人头"))
 			{
 				if (GetSnowBallState() == SnowBallState.Mark)
 				{
@@ -139,70 +203,45 @@ namespace Mark_As_Dash {
 					{
 						if (enemy.Health < GetSnowBallDmg())
 						{
-							//Game.PrintChat("enemy.Health:" + enemy.Health + "  SnowBallDmg:" + GetSnowBallDmg());
-							//Game.PrintChat("KS1 SnowBall");
 							CastMark(enemy);
 						}
 					}
 				}
-				if (GetSnowBallState() == SnowBallState.Dash
-					&& MarkTarget!=null && MarkTarget.Type == GameObjectType.obj_AI_Hero
-					&& MarkTarget.CountEnemiesInRange(700) < Player.CountEnemiesInRange(700))
-				{
-					var enemy = MarkTarget as Obj_AI_Hero;
-					if (enemy.Health <= GetSnowBallDmg())
-					{
-						//Game.PrintChat("KS2 SnowBall");
-						SnowBall.Cast();
-					}
-				}
+				
 			}
 			
 
 			#endregion
 
 			#region 半手动
-			if ((Config.Item("SmitCast").GetValue<KeyBind>().Active 
-				|| Config.Item("Toggle").GetValue<KeyBind>().Active) 
+			if ((Config.Item("半手动").GetValue<KeyBind>().Active 
+				|| Config.Item("一直用").GetValue<KeyBind>().Active) 
 				&& GetSnowBallState() == SnowBallState.Mark)
 			{
-                var Target = TargetSelector.GetTarget(SnowBall.Range, DamageTypeList[Config.Item(Player.ChampionName + "DamageType").GetValue<StringList>().SelectedIndex], false, ignoreList);
-				//Game.PrintChat("SmitCast SnowBall");
-				//CastMark(Target,HitChance.High);
-				CastMark(Target);
+                var Target = TargetSelector.GetTarget(SnowBall.Range, DamageType, false, ignoreList);
+				if (Target != null)
+				{
+					CastMark(Target);
+				}
 			}
 
 			#endregion
 		}
 
-		private static bool CastMark(Obj_AI_Hero target, HitChance hitChance = HitChance.VeryHigh) {
-			var MarkPrediction = SnowBall.GetPrediction(target);
-			if (MarkPrediction.Hitchance >= hitChance)
-			{
-                return SnowBall.Cast(MarkPrediction.CastPosition);
-			}
-			return false;
-		}
-
 		private static double GetSnowBallDmg() {
-			if (!SnowBall.IsReady())
-			{
-				return 0;
-			}
-			else 
+			if (GetSnowBallState() == SnowBallState.Mark)
 			{
 				if ((int)Game.Type == 6)
 				{
 					return 20 + (10 * Player.Level);
 				}
-				if (Game.Type == GameType.ARAM)
+				else if (Game.Type == GameType.ARAM)
 				{
 					return 10 + (5 * Player.Level);
 				}
-				return 0;					
 			}
-			
-        }
+			return 0;
+		}
 
 		private enum SnowBallState {
 			Cooldown,
@@ -217,7 +256,8 @@ namespace Mark_As_Dash {
 			}
 			else
 			{
-				if ("summonersnowball" == SnowBall.Instance.Name || "summonerporothrow" == SnowBall.Instance.Name)
+				if ("summonersnowball" == SnowBall.Instance.Name.ToLower() 
+					|| "summonerporothrow" == SnowBall.Instance.Name.ToLower())
 				{
 					return SnowBallState.Mark;
 				}
@@ -229,10 +269,22 @@ namespace Mark_As_Dash {
 			}
 		}
 
-		private static bool LoadSpell() {
+		private static TargetSelector.DamageType GetDamageType() {
+			var DamageTypeList = new List<TargetSelector.DamageType>
+			{
+				TargetSelector.DamageType.Magical,
+				TargetSelector.DamageType.Physical,
+				TargetSelector.DamageType.True
+			};
+			var TypeIndex = Config.GetStringIndex("伤害类型" + Player.ChampionName);
+			return DamageTypeList[TypeIndex - 1];
 
-			var slotARAM = ObjectManager.Player.GetSpellSlot("summonersnowball");
-			var slotPORO = ObjectManager.Player.GetSpellSlot("summonerporothrow");
+		}
+
+		private static bool LoadSpell() {
+			
+			var slotARAM = Player.GetSpellSlot("SummonerSnowball");
+			var slotPORO = Player.GetSpellSlot("SummonerPorothrow");
 			if (slotARAM != SpellSlot.Unknown)
 			{
 				SnowBall = new Spell(slotARAM, 1450);
@@ -246,162 +298,139 @@ namespace Mark_As_Dash {
 				return false;
 			}
 			SnowBall.SetSkillshot(0.33f, 50f, 1600, true, SkillshotType.SkillshotLine);
+
+			Q = new Spell(SpellSlot.Q);
+			W = new Spell(SpellSlot.W);
+			E = new Spell(SpellSlot.E);
+			R = new Spell(SpellSlot.R);
 			return true;
 
-			//var slot1 = Player.Spellbook.GetSpell(SpellSlot.Summoner1);
-			//var slot2 = Player.Spellbook.GetSpell(SpellSlot.Summoner2);
-
-			//Console.WriteLine(slot1.Name + " - " + slot2.Name);
-			//Console.WriteLine(Game.Type.ToString());
-
-			//if (Game.Type == GameType.ARAM)
-			//{
-			//	if (slot1.Name.Contains("summonersnowball"))
-			//	{
-			//		SnowBall = new Spell(slot1.Slot, 1500);
-
-			//		return true;
-			//	}
-			//	else if (slot2.Name.Contains("summonersnowball"))
-			//	{
-			//		SnowBall = new Spell(slot2.Slot, 1500);
-			//		return true;
-			//	}
-			//}
-			//else if ((int)Game.Type == 6)
-			//{
-			//	if (slot1.Name.Contains("summonerporothrow"))
-			//	{
-			//		SnowBall = new Spell(slot1.Slot, 2450);
-			//		return true;
-			//	}
-
-			//	else if (slot2.Name.Contains("summonerporothrow"))
-			//	{
-			//		SnowBall = new Spell(slot2.Slot, 2450);
-			//		return true;
-			//	}
-			//}
-			//return false;
 		}
 
 		private static void LoadMenu() {
-			Config = new Menu("晴依扔雪球", "AsMarkDash", true);
-			Config.AddToMainMenu();
-			var ListMenu = Config.AddSubMenu(new Menu("砸雪球名单", "List"));
+
+			Config = MenuExtensions.CreatMainMenu("AsMarkDash", "晴依扔雪球");
+
+			var ListMenu = Config.AddMenu("砸雪球名单", "砸雪球名单");
 			foreach (var enemy in HeroManager.Enemies)
 			{
-				ListMenu.AddItem(new MenuItem("List" + enemy.NetworkId, enemy.ChampionName + "(" + enemy.Name.ToGBK() + ")").SetValue(true)).ValueChanged += Program_ValueChanged; ;
+				ListMenu.AddBool("名单" + enemy.NetworkId, enemy.ChampionName.ToCN(IsCN) + "(" + enemy.Name.ToGBK() + ")",true).ValueChanged += Program_ValueChanged; 
 			}
 
-			var PredictConfig = Config.AddSubMenu(new Menu("Predict Settings", "预判设置"));
-			PredictConfig.AddItem(new MenuItem("预判模式", "Prediction Mode").SetValue(new StringList(new[] { "Common", "OKTW" }, 1)));
-			PredictConfig.AddItem(new MenuItem("命中率", "HitChance").SetValue(new StringList(new[] { "Very High", "High", "Medium" })));
+			var PredictConfig = Config.AddMenu("预判设置", "预判设置");
+			PredictConfig.AddStringList("预判模式", "预判模式", new[] { "基本库", "OKTW" }, 1);
+			PredictConfig.AddStringList("命中率", "命中率", new[] { "非常高", "高", "一般" });
 
-			Config.AddItem(new MenuItem("Combo", "连招时打伤害").SetValue(new KeyBind(32, KeyBindType.Press)));
-			Config.AddItem(new MenuItem(Player.ChampionName + "DamageType", "自己主要的伤害类型").SetValue(
-				new StringList(new[] { "未设置", "物理", "法术", "真实伤害" })));
-			
-			Config.AddItem(new MenuItem("KS", "抢人头").SetValue(true));
-			Config.AddItem(new MenuItem("SmitCast", "半手动施放").SetValue(new KeyBind('G', KeyBindType.Press)));
-			Config.AddItem(new MenuItem("Toggle", "一直使用").SetValue(new KeyBind('O', KeyBindType.Toggle)));
-			Config.AddItem(new MenuItem("DrawRange","显示范围").SetValue(new Circle()));
+			Config.AddStringList("伤害类型" + Player.ChampionName, "选择自己的主要伤害", new[] { "未设置", "物理伤害", "魔法伤害", "真实伤害" }).ValueChanged += DamageType_ValueChanged;
 
-			var MultiLanguageConfig = Config.AddSubMenu(new Menu("MultiLanguage Settings", "语言选择"));
-			MultiLanguageConfig.AddItem(new MenuItem("选择语言", "Selecte Language").SetValue(new StringList(new[] { "English", "中文" }))).ValueChanged += MultiLanguage_ValueChanged;
+			Config.AddBool("抢人头", "抢人头",true);
 
-			//ChangeLanguage(MultiLanguageConfig.Item("选择语言").GetValue<StringList>().SelectedIndex);
-			ChangeLanguage(1);
-        }
-		private static void ChangeLanguage(int SelectedIndex) {
-			List<Dictionary<string, string>> Languages = new List<Dictionary<string, string>> {
-				MultiLanguage.English,
-				MultiLanguage.Chinese
-			};
-			var Language = Languages[SelectedIndex];
+			Config.AddBool("连招","连招时使用",true);
+			Config.AddBool("消耗", "消耗时使用", false);
+			Config.AddKeyBind("半手动", "半手动施放", 'G', KeyBindType.Press);
+			Config.AddKeyBind("一直用", "一直使用", 'O', KeyBindType.Toggle);
 
-			List<object> menus = GetSubMenus(Config);
+			Config.AddCircle("显示范围", "显示范围",true,Color.GreenYellow);
+			Config.AddBool("小地图显示", "小地图显示范围");
+			Config.AddCircle("标记提醒", "标记提醒", true, Color.OrangeRed);
 
-			foreach (var item in menus)
+			Config.AddBool("调试", "调试");
+
+
+			if (Config.GetStringIndex("伤害类型" + Player.ChampionName) == 0)
 			{
-				if (item is Menu)
-				{
-					var m = item as Menu;
-					var DisplayName = Language.Find(l => l.Key == m.Name).Value;
-					if (!string.IsNullOrEmpty(DisplayName))
-					{
-						m.DisplayName = DisplayName;
-					}
-				}
-				else
-				{
-					var m = item as MenuItem;
-					var DisplayName = Language.Find(l => l.Key == m.Name).Value;
-					if (!string.IsNullOrEmpty(DisplayName))
-					{
-						m.DisplayName = DisplayName;
-					}
-				}
+				Game.PrintChat("[雪球] 必须先设置伤害类型，才能正确获取目标".ToHtml(Color.Orange));
 			}
 		}
 
-		private static List<object> GetSubMenus(Menu menu) {
-			List<object> AllMenus = new List<object>();
-			AllMenus.Add(menu);
-			foreach (var item in menu.Items)
+		private static void DamageType_ValueChanged(object sender, OnValueChangeEventArgs e) {
+			switch (e.GetNewValue<StringList>().SelectedIndex)
 			{
-				AllMenus.Add(item);
+				case 1:
+					DamageType = TargetSelector.DamageType.Physical;
+					break;
+				case 2:
+					DamageType = TargetSelector.DamageType.Magical;
+					break;
+				case 3:
+					DamageType = TargetSelector.DamageType.True;
+					break;
+				default:
+					DamageType = TargetSelector.DamageType.Physical;
+					break;
 			}
-			foreach (var item in menu.Children)
-			{
-				AllMenus.AddRange(GetSubMenus(item));
-			}
-			return AllMenus;
 		}
 
-		private static void MultiLanguage_ValueChanged(object sender, OnValueChangeEventArgs e) {
-			ChangeLanguage(e.GetNewValue<StringList>().SelectedIndex);
+		private static void Program_ValueChanged1(object sender, OnValueChangeEventArgs e) {
+			throw new NotImplementedException();
 		}
 
 		public static bool CastMark(Obj_AI_Hero target) {
-			var hitChangceIndex = Config.Item("命中率").GetValue<StringList>().SelectedIndex;
+			if (Config.GetBool("调试"))
+			{
+				DeBug.Debug("[释放技能]", $"目标 {target.Name.ToUTF8()}", DebugLevel.Warning, Output.ChatBox);
+				DeBug.Debug("[释放技能]", $"模式 {Config.GetStringList("预判模式").SelectedValue}", DebugLevel.Warning, Output.ChatBox);
+				DeBug.Debug("[释放技能]", $"命中率 {Config.GetStringList("命中率").SelectedValue}", DebugLevel.Warning, Output.ChatBox);
+			}
 
-			if (Config.Item("预判模式").GetValue<StringList>().SelectedIndex == 0)
+
+
+			var hitChangceIndex = Config.GetStringIndex("命中率");
+			var PredictMode = Config.GetStringIndex("预判模式");
+
+
+			if (PredictMode == 0)
 			{
 				var hitChangceList = new[] { HitChance.VeryHigh, HitChance.High, HitChance.Medium };
 				return SnowBall.CastIfHitchanceEquals(target, hitChangceList[hitChangceIndex]);
 			}
-			else if (Config.Item("预判模式").GetValue<StringList>().SelectedIndex == 1)
+			else if (PredictMode == 1)
 			{
-				var hitChangceList = new[] { OKTWPrediction.HitChance.VeryHigh, OKTWPrediction.HitChance.High, OKTWPrediction.HitChance.Medium };
-				return CastOKTW(target, hitChangceList[hitChangceIndex]);
+				var hitChangceList = new[] { SebbyPredict.HitChance.VeryHigh, SebbyPredict.HitChance.High, SebbyPredict.HitChance.Medium };
+				return CastSpell(SnowBall,target, hitChangceList[hitChangceIndex]);
 			}
 			return false;
 		}
 
-		public static bool CastOKTW(Obj_AI_Hero target, OKTWPrediction.HitChance hitChance) {
-			var spell = SnowBall;
-
-			OKTWPrediction.SkillshotType CoreType2 = OKTWPrediction.SkillshotType.SkillshotLine;
+		public static bool CastSpell(Spell spell, Obj_AI_Base target, SebbyLib.Prediction.HitChance hitChance) {
+			SebbyLib.Prediction.SkillshotType CoreType2 = SebbyLib.Prediction.SkillshotType.SkillshotLine;
 			bool aoe2 = false;
 
-			var predInput2 = new OKTWPrediction.PredictionInput
+			if (spell.Type == SkillshotType.SkillshotCircle)
+			{
+				CoreType2 = SebbyLib.Prediction.SkillshotType.SkillshotCircle;
+				aoe2 = true;
+			}
+
+			if (spell.Width > 80 && !spell.Collision)
+				aoe2 = true;
+
+			var predInput2 = new SebbyLib.Prediction.PredictionInput
 			{
 				Aoe = aoe2,
 				Collision = spell.Collision,
 				Speed = spell.Speed,
 				Delay = spell.Delay,
 				Range = spell.Range,
-				From = Player.ServerPosition,
+				From = HeroManager.Player.ServerPosition,
 				Radius = spell.Width,
 				Unit = target,
 				Type = CoreType2
 			};
-			var poutput2 = OKTWPrediction.Prediction.GetPrediction(predInput2);
+			var poutput2 = SebbyLib.Prediction.Prediction.GetPrediction(predInput2);
+
+			if (spell.Speed != float.MaxValue && OktwCommon.CollisionYasuo(HeroManager.Player.ServerPosition, poutput2.CastPosition))
+				return false;
+
 			if (poutput2.Hitchance >= hitChance)
 			{
 				return spell.Cast(poutput2.CastPosition);
 			}
+			else if (predInput2.Aoe && poutput2.AoeTargetsHitCount > 1 && poutput2.Hitchance >= SebbyLib.Prediction.HitChance.High)
+			{
+				return spell.Cast(poutput2.CastPosition);
+			}
+
 			return false;
 		}
 
@@ -410,7 +439,7 @@ namespace Mark_As_Dash {
 			var menuItem = sender as MenuItem;
 			foreach (var enemy in HeroManager.Enemies)
 			{
-				if (menuItem.Name == "List" + enemy.NetworkId)
+				if (menuItem.Name == "名单" + enemy.NetworkId)
 				{
 					if (e.GetNewValue<bool>())
 					{

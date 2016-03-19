@@ -1,53 +1,49 @@
-﻿using LeagueSharp;
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
 namespace Mark_As_Dash {
-	public class MultiLanguage {
-		public static Obj_AI_Hero Player = ObjectManager.Player;
-
-		public static Dictionary<string, string> Chinese { get; private set; } = new Dictionary<string, string> {
-
-			{ "AsMarkDash","晴依扔雪球"},
-			{"List","砸雪球名单" },
-			{ "Combo", "连招时打伤害"},
-			{ Player.ChampionName + "DamageType","自己主要的伤害类型"},
-			{ "预判设置", "预判设置"},
-			{ "预判模式", "预判模式"},
-			{ "命中率", "命中率"},
-			{ "KS", "抢人头"},
-			{ "SmitCast", "半手动施放"},
-			{ "Toggle", "一直使用"},
-			{ "DrawRange","显示范围"},
-			{ "语言选择", "MultiLanguage Settings"},
-			{ "选择语言", "Selecte Language"},
-			{ "标识目标", "标识目标"},
-			{ "调试","调试"}
-
+	public static class MultiLanguage {
+		public static Dictionary<string, string> EnglishDictionary = new Dictionary<string, string>
+		{
+			{"晴依扔雪球", "Mark As Dash" },
+			{"砸雪球名单", "Mark List" },
+			{"预判设置", "Predict Settings" },
+			{"预判模式", "Predict Mode" },
+			{"命中率", "Hit Chance" },
+			{"选择自己的主要伤害", "Damage Type" },
+			{"未设置", "No-Setting" },
+			{"物理伤害", "" },
+			{"魔法伤害", "" },
+			{"真实伤害", "" },
+			{"抢人头", "KS" },
+			{"连招时使用", "Use in Comb" },
+			{"消耗时使用", "Use in Harass" },
+			{"半手动施放", "Simt-Cast" },
+			{"一直使用", "Awayls Use" },
+			{"显示范围", "Show Range" },
+			{"小地图显示", "Show Range On MiniMap" },
+			{"标记提醒", "Sow Makr Enemy Info" },
+			{"调试", "Bebug" },
+			{"[雪球] 必须先设置伤害类型，才能正确获取目标", "[MAD] Selecte Your Damage Type" },
+			{"标记中小兵附近没有敌人", "No enemies nearby marked miniom" },
+			{"", "" },
+			{"", "" },
+			{"", "" },
+			{"", "" },
+			{"", "" },
+			{"", "" },
+			{"", "" },
+			{"", "" },
+			{"", "" },
+			{"", "" },
+			{"", "" },
+			{"", "" },
+			{"", "" },
+			{"", "" },
+			{"", "" },
 		};
-
-		public static Dictionary<string, string> English { get; private set; } = new Dictionary<string, string> {
-
-			{ "AsMarkDash","晴依扔雪球"},
-			{"List","砸雪球名单" },
-			{ "Combo", "连招时打伤害"},
-			{ Player.ChampionName + "DamageType","Selecte your damage type"},
-			{ "预判设置", "Predict Settings"},
-			{ "预判模式", "Prediction Mode"},
-			{ "命中率", "HitChance"},
-			{ "KS", "ks"},
-			{ "SmitCast", "Cast"},
-			{ "Toggle", "Always Cast"},
-			{ "DrawRange","Draw Range"},
-
-			{ "语言选择", "多语言设置"},
-			{ "选择语言", "选择语言"},
-			{ "标识目标", "Draw Target"},
-			{ "调试","Debug Mod"}
-		};
-
 	}
 }
