@@ -288,16 +288,18 @@ namespace Mark_As_Dash {
 			if (slotARAM != SpellSlot.Unknown)
 			{
 				SnowBall = new Spell(slotARAM, 1450);
+				SnowBall.SetSkillshot(0f, 60f, 1500f, true, SkillshotType.SkillshotLine);
 			}
 			else if (slotPORO != SpellSlot.Unknown)
 			{
 				SnowBall = new Spell(slotPORO, 2450);
+				SnowBall.SetSkillshot(0.33f, 50f, 1600, true, SkillshotType.SkillshotLine);
 			}
 			else
 			{
 				return false;
 			}
-			SnowBall.SetSkillshot(0.33f, 50f, 1600, true, SkillshotType.SkillshotLine);
+			
 
 			Q = new Spell(SpellSlot.Q);
 			W = new Spell(SpellSlot.W);
