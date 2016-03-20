@@ -38,7 +38,7 @@ namespace Jhin_As_The_Virtuoso {
 			{ "文字提示横向位置","Text Position X"},
 			{ "文字提示纵向位置","Text Position Y"},
 			{ "信号提示R可击杀目标(本地)","Local Ping Remind"},
-			{ "半手动R设置(自动R)","Semi-manual cast R key"},
+			{ "半手动R设置","Semi-manual cast R key"},
 			{ "半手动R(自动R)","KeyBind"},
 			{ "第一次R后延迟(毫秒)","Delay Before R2(ms)"},
 			{ "第二次R后延迟(毫秒)","Delay Before R3(ms)"},
@@ -75,6 +75,9 @@ namespace Jhin_As_The_Virtuoso {
 			{ "Language Settings","语言设置"},
 			{ "Press F5 reload assebmly to change language","按F5重载脚本更换语言"},
 			{  "Select language","选择语言"},
+			{ "自动R设置","Auto R Settings"},
+			{ "自动R","Auto R"},
+			{ "",""},
 			//{ "",""},
 		};
 	}

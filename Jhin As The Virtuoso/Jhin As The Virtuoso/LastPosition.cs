@@ -27,6 +27,22 @@ namespace Jhin_As_The_Virtuoso {
 			Game.OnUpdate += Game_OnUpdate;
 		}
 
+		public static List<LastPositionStruct> GetLastPositionsInRange(Vector3 pos,float range) {
+			return LastPositions.Where(lp => lp.LastPosition.Distance(pos) < range && !lp.Hero.IsDead).ToList();
+		}
+
+		public static List<LastPositionStruct> GetLastPositionsInRange(Obj_AI_Base unit, float range) {
+			return LastPositions.Where(lp => lp.LastPosition.Distance(unit.Position) < range && !lp.Hero.IsDead).ToList();
+		}
+
+		public static List<LastPositionStruct> GetLastPositionsInRange(Vector3 pos, float range, float time) {
+			return LastPositions.Where(lp => lp.LastPosition.Distance(pos) < range && !lp.Hero.IsDead && Game.ClockTime - lp.LastSeen < time).ToList();
+		}
+
+		public static List<LastPositionStruct> GetLastPositionsInRange(Obj_AI_Base unit, float range,float time) {
+			return LastPositions.Where(lp => lp.LastPosition.Distance(unit.Position) < range && !lp.Hero.IsDead && Game.ClockTime - lp.LastSeen < time).ToList();
+		}
+
 		private static void Game_OnUpdate(EventArgs args) {
 			foreach (var lp in LastPositions)
 			{

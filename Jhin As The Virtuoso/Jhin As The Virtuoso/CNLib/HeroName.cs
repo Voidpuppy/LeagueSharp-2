@@ -118,7 +118,7 @@ namespace CNLib {
 			new HeroNameEntity("Zac", "扎克", new[] { "生化魔人", "大大超人" }),
 			new HeroNameEntity("Yorick", "掘墓者", new[] { "约里克" }),
 			new HeroNameEntity("Yasuo", " 亚索", new[] { "疾风剑豪" }),
-			new HeroNameEntity("Xin Zhao", "赵信", new[] { "德邦总管" }),
+			new HeroNameEntity("XinZhao", "赵信", new[] { "德邦总管" }),
 			new HeroNameEntity("Xerath", "泽拉斯", new[] { "远古巫灵" }),
 			new HeroNameEntity("Wukong", "猴子", new[] { "齐天大圣", "孙悟空" }),
 			new HeroNameEntity("Warwick", "狼人", new[] { "嗜血猎手", "沃里克" }),

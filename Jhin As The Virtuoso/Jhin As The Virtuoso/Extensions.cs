@@ -115,8 +115,8 @@ namespace Jhin_As_The_Virtuoso {
 					damage = (-25 + 75 * Jhin.R.Level + 0.2 * Jhin.Player.FlatPhysicalDamageMod) * (1 + (100 - target.HealthPercent) * 0.02);
 					break;
 			}
-			
 
+			damage = Jhin.Player.CalcDamage(target, Damage.DamageType.Physical, damage);
 			return damage;
 		}
 
