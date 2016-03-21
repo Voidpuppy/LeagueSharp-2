@@ -9,6 +9,7 @@ using System.Threading;
 namespace CNLib {
 	public static class MultiLanguage {
 		private static Dictionary<string, string> Translations { get; set; } = new Dictionary<string, string>();
+		public static bool IsCN => IsChinese();
 
 		public static string _(string textToTranslate) {
 			var show = string.Empty;
@@ -33,20 +34,20 @@ namespace CNLib {
 		}
 
 		public static void Load(Dictionary<string, Dictionary<string, string>> LanguageDictionary) {
-			
-			if (!IsChinese())
+			DeBug.Debug($"IsChinese{IsCN}");
+			if (!IsCN)
 			{
 				Translations = LanguageDictionary["English"];
 			}
 
 		}
 
-		public static bool IsChinese() {
+		private static bool IsChinese() {
 			
 			if (!string.IsNullOrEmpty(Config.SelectedLanguage))
 			{
 				
-				if (Config.SelectedLanguage != "Chinese")
+				if (Config.SelectedLanguage == "Chinese")
 				{
 					return true;
 				}

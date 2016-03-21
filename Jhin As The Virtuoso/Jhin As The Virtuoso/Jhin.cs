@@ -45,12 +45,11 @@ namespace Jhin_As_The_Virtuoso {
 		});
 
 		public static Storage storage { get; set; }  = new Storage("Jhin As The Virtuoso 1");
-		public static bool IsChinese { get; set; } = false;
+		public static bool IsChinese { get; set; } = CNLib.MultiLanguage.IsCN;
 
 		internal static void OnLoad(EventArgs args) {
 			if (Player.ChampionName!="Jhin"){ return; }
 
-			IsChinese = CNLib.MultiLanguage.IsChinese();
 			CNLib.MultiLanguage.Load(new Dictionary<string, Dictionary<string, string>>() {
 				{ "English",MultiLanguage.EnglishDictionary}
 			});
