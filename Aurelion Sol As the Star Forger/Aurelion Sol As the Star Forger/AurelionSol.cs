@@ -407,7 +407,7 @@ namespace Aurelion_Sol_As_the_Star_Forger {
 			DMenu.AddCircle("蓝量显示", "显示蓝量可以用几秒W", true, Color.AliceBlue);
 
 			AutoLevelUp.Initialize(Config,new []{R,W,Q,E});
-			CheckVersion.Initialize(Config, "https://raw.githubusercontent.com/VivianGit/LeagueSharp/master/Jhin%20As%20The%20Virtuoso/Jhin%20As%20The%20Virtuoso/Properties/AssemblyInfo.cs");
+			CheckVersion.Initialize(Config, "https://raw.githubusercontent.com/VivianGit/LeagueSharp/master/Aurelion%20Sol%20As%20the%20Star%20Forger/Aurelion%20Sol%20As%20the%20Star%20Forger/Properties/AssemblyInfo.cs");
 		}
 
 		private static void LoadSpell() {
