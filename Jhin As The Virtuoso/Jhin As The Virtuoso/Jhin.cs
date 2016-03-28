@@ -538,7 +538,7 @@ namespace Jhin_As_The_Virtuoso {
 		private	static void RLogic() {
 			if (!IsCastingR && Config.GetBool("自动R"))
 			{
-				var target = TargetSelector.GetTarget(R.Range - 100, TargetSelector.DamageType.Physical);
+				var target = TargetSelector.GetTarget(R.Range - 400, TargetSelector.DamageType.Physical);
 				if (target!= null && target.IsValid && !target.IsDead 
 					&& GetRDmg(target) > target.Health
 					&& OktwCommon.ValidUlt(target) && !OktwCommon.IsSpellHeroCollision(target, R)
