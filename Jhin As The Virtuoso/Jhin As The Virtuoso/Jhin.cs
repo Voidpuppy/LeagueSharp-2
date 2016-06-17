@@ -636,25 +636,25 @@ namespace Jhin_As_The_Virtuoso {
 
 			if (W.IsReady() && ShowW.Active)
 			{
-				Render.Circle.DrawCircle(Player.ServerPosition, W.Range, ShowW.Color, 2);
+				Render.Circle.DrawCircle(Player.Position, W.Range, ShowW.Color, 2);
 			}
 			if (W.IsReady() && ShowWM)
 			{
-				Utility.DrawCircle(Player.ServerPosition, W.Range, ShowW.Color, 2, 30, true);
+				Utility.DrawCircle(Player.Position, W.Range, ShowW.Color, 2, 30, true);
 			}
 
 			if (R.IsReady() && ShowR.Active)
 			{
-				Render.Circle.DrawCircle(Player.ServerPosition, R.Range, ShowR.Color, 2);
+				Render.Circle.DrawCircle(Player.Position, R.Range, ShowR.Color, 2);
 			}
 			if (R.IsReady() && ShowRM)
 			{
-				Utility.DrawCircle(Player.ServerPosition, R.Range, ShowR.Color, 2, 30, true);
+				Utility.DrawCircle(Player.Position, R.Range, ShowR.Color, 2, 30, true);
 			}
 
 			if (E.IsReady() && ShowE.Active)
 			{
-				Render.Circle.DrawCircle(Player.ServerPosition, E.Range, ShowE.Color, 2);
+				Render.Circle.DrawCircle(Player.Position, E.Range, ShowE.Color, 2);
 			}
 			#endregion
 
