@@ -77,6 +77,9 @@ namespace Jhin_As_The_Virtuoso {
 		}
 
 		private static void LoadEvents() {
+            //
+            Obj_AI_Base.OnDoCast += Obj_AI_Base_OnDoCast;
+            //
 			Game.OnUpdate += Game_OnUpdate;
 			Drawing.OnDraw += Drawing_OnDraw;
 			Game.OnWndProc += Game_OnWndProc;
@@ -90,7 +93,7 @@ namespace Jhin_As_The_Virtuoso {
 			CustomEvents.Unit.OnDash += Unit_OnDash;
 		}
 
-		private static void Orbwalking_OnNonKillableMinion(AttackableUnit minion) {
+        private static void Orbwalking_OnNonKillableMinion(AttackableUnit minion) {
 			if (Q.IsReady() && Config.Item("补刀Q").GetValue<bool>())
 			{
 				Q.Cast(minion as Obj_AI_Base);
@@ -123,23 +126,50 @@ namespace Jhin_As_The_Virtuoso {
 			}
 		}
 
-		private static void Obj_AI_Base_OnDoCast(Obj_AI_Base sender, GameObjectProcessSpellCastEventArgs args) {
-			if (sender.IsMe)
-			{
-				if (args.SData.Name == "JhinRShotMis")
-				{
+		private static void Obj_AI_Base_OnDoCast(Obj_AI_Base sender, GameObjectProcessSpellCastEventArgs Args) {
+			//if (sender.IsMe)
+			//{
+			//	if (args.SData.Name == "JhinRShotMis")
+			//	{
 					
-					RCharge.Index++;
-					RCharge.CastT = Game.ClockTime;
-				}
-				if (args.SData.Name == "JhinRShotMis4")
-				{
+			//		RCharge.Index++;
+			//		RCharge.CastT = Game.ClockTime;
+			//	}
+			//	if (args.SData.Name == "JhinRShotMis4")
+			//	{
 					
-					RCharge.Index = 0;
-					RCharge.CastT = Game.ClockTime;
-					RCharge.Target = null;
-				}
-			}
+			//		RCharge.Index = 0;
+			//		RCharge.CastT = Game.ClockTime;
+			//		RCharge.Target = null;
+			//	}
+			//}
+
+            if (sender.IsMe && !Orbwalking.IsAutoAttack(Args.SData.Name) && Orbwalker.ActiveMode == Orbwalking.OrbwalkingMode.Combo)
+            {
+                if (Args.Target is Obj_AI_Hero && Config.Item("ComboW").GetValue<bool>() && W.IsReady())
+                {
+                    var target = (Obj_AI_Hero)Args.Target;
+
+                    if (!target.IsDead && !target.IsZombie && target.IsValidTarget(W.Range) && target.IsHPBarRendered)
+                    {
+                        if (target.HasWBuff() && Config.Item("标记W").GetValue<bool>())
+                        {
+                            W.CastSpell(target);
+                            return;
+                        }
+                        else
+                        {
+                            var WPred = W.GetPrediction(target);
+
+                            if (WPred.Hitchance >= HitChance.VeryHigh)
+                            {
+                                W.Cast(WPred.UnitPosition, true);
+                                return;
+                            }
+                        }
+                    }
+                }
+            }
 		}
 
 		private static void Orbwalking_AfterAttack(AttackableUnit unit, AttackableUnit target) {
@@ -636,25 +666,25 @@ namespace Jhin_As_The_Virtuoso {
 
 			if (W.IsReady() && ShowW.Active)
 			{
-				Render.Circle.DrawCircle(Player.ServerPosition, W.Range, ShowW.Color, 2);
+				Render.Circle.DrawCircle(Player.Position, W.Range, ShowW.Color, 2);
 			}
 			if (W.IsReady() && ShowWM)
 			{
-				Utility.DrawCircle(Player.ServerPosition, W.Range, ShowW.Color, 2, 30, true);
+				Utility.DrawCircle(Player.Position, W.Range, ShowW.Color, 2, 30, true);
 			}
 
 			if (R.IsReady() && ShowR.Active)
 			{
-				Render.Circle.DrawCircle(Player.ServerPosition, R.Range, ShowR.Color, 2);
+				Render.Circle.DrawCircle(Player.Position, R.Range, ShowR.Color, 2);
 			}
 			if (R.IsReady() && ShowRM)
 			{
-				Utility.DrawCircle(Player.ServerPosition, R.Range, ShowR.Color, 2, 30, true);
+				Utility.DrawCircle(Player.Position, R.Range, ShowR.Color, 2, 30, true);
 			}
 
 			if (E.IsReady() && ShowE.Active)
 			{
-				Render.Circle.DrawCircle(Player.ServerPosition, E.Range, ShowE.Color, 2);
+				Render.Circle.DrawCircle(Player.Position, E.Range, ShowE.Color, 2);
 			}
 			#endregion
 
@@ -720,7 +750,8 @@ namespace Jhin_As_The_Virtuoso {
 
 			//W菜单
 			var WMenu = Config.AddMenu("W设置", "W设置");
-			WMenu.AddBool("硬控W", "自动W硬控敌人", true);
+            WMenu.AddBool("ComboW", "Use W In Combo", true);
+            WMenu.AddBool("硬控W", "自动W硬控敌人", true);
 			WMenu.AddBool("标记W", "W有标记的敌人", true);
 			WMenu.AddBool("抢人头W", "W抢人头", true);
 			WMenu.AddBool("防突W", "W有标记的突进", true);
