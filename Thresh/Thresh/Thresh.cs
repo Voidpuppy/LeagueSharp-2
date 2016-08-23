@@ -8,6 +8,7 @@ using System.Text;
 using System.Threading.Tasks;
 using Color = System.Drawing.Color;
 using SharpDX.Direct3D9;
+using Orbwalking = SebbyLib.Orbwalking;
 
 namespace Thresh {
 	class Thresh {
@@ -49,7 +50,9 @@ namespace Thresh {
 		private static void Orbwalking_BeforeAttack(Orbwalking.BeforeAttackEventArgs args) {
 			if (Config.Item("辅助模式").GetValue<bool>() 
 				&& GetAdc(Config.Item("辅助模式距离").GetValue<Slider>().Value) != null
-				&& (Orbwalker.ActiveMode == Orbwalking.OrbwalkingMode.Mixed || Orbwalker.ActiveMode== Orbwalking.OrbwalkingMode.LastHit || Orbwalker.ActiveMode == Orbwalking.OrbwalkingMode.LaneClear))
+				&& (Orbwalker.ActiveMode == Orbwalking.OrbwalkingMode.Mixed 
+					|| Orbwalker.ActiveMode== Orbwalking.OrbwalkingMode.LastHit 
+					|| Orbwalker.ActiveMode == Orbwalking.OrbwalkingMode.LaneClear && Player.GetAutoAttackDamage(args.Target as Obj_AI_Base) * 1.5f > args.Target.Health))
 			{
 				args.Process = false;
 			}
@@ -592,7 +595,7 @@ namespace Thresh {
 			//FleeConfig.AddItem(new MenuItem("Q野怪", "Auto Q Jungle [TEST]").SetValue(true));
 
 			var PredictConfig = Config.AddSubMenu(new Menu("Predict Settings", "预判设置"));
-			PredictConfig.AddItem(new MenuItem("预判模式", "Prediction Mode").SetValue(new StringList(new[] { "Common", "OKTW" },1)));
+			PredictConfig.AddItem(new MenuItem("预判模式", "Prediction Mode").SetValue(new StringList(new[] { "Common", "OKTW" , "S Prediction" },1)));
 			PredictConfig.AddItem(new MenuItem("命中率", "HitChance").SetValue(new StringList(new[] { "Very High", "High", "Medium" })));
 
 			var BoxConfig = Config.AddSubMenu(new Menu("Box Settings", "大招设置"));

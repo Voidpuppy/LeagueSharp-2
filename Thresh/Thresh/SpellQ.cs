@@ -5,6 +5,7 @@ using System.Text;
 using System.Threading.Tasks;
 using LeagueSharp;
 using LeagueSharp.Common;
+using SPrediction;
 
 namespace Thresh {
 
@@ -30,6 +31,11 @@ namespace Thresh {
 			{
 				var hitChangceList = new[] { SebbyLib.Prediction.HitChance.VeryHigh, SebbyLib.Prediction.HitChance.High, SebbyLib.Prediction.HitChance.Medium };
 				return Q.CastOKTW(target, hitChangceList[hitChangceIndex]);
+			}
+			else if(Config.Item("预判模式").GetValue<StringList>().SelectedIndex == 2)
+			{
+				var hitChangceList = new[] { HitChance.VeryHigh, HitChance.High, HitChance.Medium };
+				Q.SPredictionCast(target, hitChangceList[hitChangceIndex]);
 			}
 			return false;
 		}
@@ -76,8 +82,13 @@ namespace Thresh {
 			return false;
 		}
 
+		private static bool IsAllyDashWithW() {
+			//threesisters
+			return HeroManager.Allies.Any(a => a.HasBuff("InitializeShieldMarker") && a.GetBuff("InitializeShieldMarker").Caster.IsMe);
+		}
+
 		public static bool CastQ2() {
-			if (Thresh.QTarget is Obj_AI_Hero && Thresh.QTarget.GetPassiveTime("ThreshQ") < 0.3)
+			if (Thresh.QTarget is Obj_AI_Hero && (Thresh.QTarget.GetPassiveTime("ThreshQ") < 0.3 || IsAllyDashWithW()))
 			{
 				return Thresh.Q.Cast();
 			}
