@@ -7,7 +7,6 @@ using System.Threading.Tasks;
 namespace Thresh {
 	public class MultiLanguage {
 		public static Dictionary<string, string> Chinese { get; private set; } = new Dictionary<string, string> {
-
 			{ "锤石As", "锤石 - 魂锁典狱"},
 			{ "走砍设置", "走砍设置"},
 			{ "技能设置", "技能设置"},
@@ -52,7 +51,6 @@ namespace Thresh {
 		};
 
 		public static Dictionary<string, string> English { get; private set; } = new Dictionary<string, string> {
-			
 			{ "锤石As", "Thresh As the Chain Warden"},
 			{ "走砍设置", "Orbwalker"},
 			{ "技能设置", "Spell Settings"},
