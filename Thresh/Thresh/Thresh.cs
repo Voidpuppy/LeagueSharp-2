@@ -26,6 +26,8 @@ namespace Thresh {
 		public static void OnLoad(EventArgs args) {
 			if (Player.ChampionName != "Thresh") return;
 
+			
+
 			LoadSpell();
 			LoadMenu();
 
@@ -597,6 +599,7 @@ namespace Thresh {
 			var PredictConfig = Config.AddSubMenu(new Menu("Predict Settings", "预判设置"));
 			PredictConfig.AddItem(new MenuItem("预判模式", "Prediction Mode").SetValue(new StringList(new[] { "Common", "OKTW" , "S Prediction" },1)));
 			PredictConfig.AddItem(new MenuItem("命中率", "HitChance").SetValue(new StringList(new[] { "Very High", "High", "Medium" })));
+			SPrediction.Prediction.Initialize(PredictConfig);
 
 			var BoxConfig = Config.AddSubMenu(new Menu("Box Settings", "大招设置"));
 			BoxConfig.AddItem(new MenuItem("大招人数", "Box Count").SetValue(new Slider(2, 1, 6)));
