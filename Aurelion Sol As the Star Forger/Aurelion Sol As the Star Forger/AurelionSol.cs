@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using LeagueSharp;
 using LeagueSharp.Common;
 using CNLib;
@@ -46,7 +46,7 @@ namespace Aurelion_Sol_As_the_Star_Forger {
 			AntiGapcloser.OnEnemyGapcloser += AntiGapcloser_OnEnemyGapcloser;
 			Interrupter2.OnInterruptableTarget += Interrupter2_OnInterruptableTarget;
 			Spellbook.OnCastSpell += Spellbook_OnCastSpell;
-			Orbwalking.BeforeAttack += OrbwalkingBeforeAttack
+			Orbwalking.BeforeAttack += OrbwalkingBeforeAttack;
 		}
 
 		private static void Spellbook_OnCastSpell(Spellbook sender, SpellbookCastSpellEventArgs args) {
@@ -296,12 +296,21 @@ namespace Aurelion_Sol_As_the_Star_Forger {
 			}
 		}
 		
-		 private static void OrbwalkingBeforeAttack(Orbwalking.BeforeAttackEventArgs args)
+		private static void OrbwalkingBeforeAttack(Orbwalking.BeforeAttackEventArgs args)
         {
             if (Menu.Item("AA.Block").IsActive() && Orbwalker.ActiveMode == Orbwalking.OrbwalkingMode.Combo)
             {
                 args.Process = false;
-            }}
+            }
+            else
+            {
+                if (Orbwalker.ActiveMode == Orbwalking.OrbwalkingMode.Combo)
+                {
+                    args.Process = false;
+                }
+            }
+        }
+
 
 		private static void RLogic() {
 
