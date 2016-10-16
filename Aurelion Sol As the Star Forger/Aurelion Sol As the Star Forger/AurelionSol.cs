@@ -296,9 +296,9 @@ namespace Aurelion_Sol_As_the_Star_Forger {
 			}
 		}
 		
-		private static void OrbwalkingBeforeAttack(Orbwalking.BeforeAttackEventArgs args)
+        private static void OrbwalkingBeforeAttack(Orbwalking.BeforeAttackEventArgs args)
         {
-            if (Menu.Item("AA.Block").IsActive() && Orbwalker.ActiveMode == Orbwalking.OrbwalkingMode.Combo)
+            if (Config.GetBool("禁止平A") && Orbwalker.ActiveMode == Orbwalking.OrbwalkingMode.Combo)
             {
                 args.Process = false;
             }
@@ -306,11 +306,12 @@ namespace Aurelion_Sol_As_the_Star_Forger {
             {
                 if (Orbwalker.ActiveMode == Orbwalking.OrbwalkingMode.Combo)
                 {
-                    args.Process = false;
+                    args.Process =
+                        !(Q.IsReady() 
+                          || Player.Distance(args.Target) >= 1000);
                 }
             }
         }
-
 
 		private static void RLogic() {
 
