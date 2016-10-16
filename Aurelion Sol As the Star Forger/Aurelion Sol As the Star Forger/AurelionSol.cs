@@ -263,7 +263,7 @@ namespace Aurelion_Sol_As_the_Star_Forger {
 				}
 			}
 
-			if (Orbwalker.ActiveMode == Orbwalking.OrbwalkingMode.Combo)
+			if (Orbwalker.ActiveMode == Orbwalking.OrbwalkingMode.Combo
 					&& Config.GetBool("禁止平A")
 					&& W.IsInRange(target,100)
 					&& Player.MoveSpeed + 25 < target.MoveSpeed)
